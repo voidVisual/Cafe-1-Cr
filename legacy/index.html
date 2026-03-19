@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cafe 1 Cr — Coffee So Good</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+
+    <!-- NAV -->
+    <nav>
+        <div class="nav-logo">Cafe <span>1 Cr</span></div>
+        <ul class="nav-links">
+            <li><a href="#menu">Menu</a></li>
+            <li><a href="#special">Specials</a></li>
+            <li><a href="#order-section">Order</a></li>
+            <li><a href="#delivery">Delivery</a></li>
+            <li><a href="#testimonials">Reviews</a></li>
+        </ul>
+        <div class="nav-right">
+            <button class="btn-outline"
+                onclick="document.getElementById('menu').scrollIntoView({behavior:'smooth'})">View Menu</button>
+            <button class="btn-primary" onclick="openCart()">🛒 Cart <span id="nav-cart-count"></span></button>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section id="hero" style="padding:0; max-width:100%;">
+        <div class="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-badge">☕ Pune's Finest Brew</div>
+                <h1 class="hero-title">Coffee so good,<br>your taste buds<br>will <em>love it.</em></h1>
+                <p class="hero-sub">The best grain, the finest roast, the most powerful flavor. Experience coffee the
+                    way it was always meant to be.</p>
+                <div class="hero-ctas">
+                    <button class="btn-hero-primary"
+                        onclick="document.getElementById('menu').scrollIntoView({behavior:'smooth'})">Order Now</button>
+                    <button class="btn-hero-outline"
+                        onclick="document.getElementById('special').scrollIntoView({behavior:'smooth'})">Explore
+                        Menu</button>
+                </div>
+                <div class="hero-stats">
+                    <div>
+                        <div class="stat-val">4.9★</div>
+                        <div class="stat-label">Average Rating</div>
+                    </div>
+                    <div>
+                        <div class="stat-val">50k+</div>
+                        <div class="stat-label">Happy Customers</div>
+                    </div>
+                    <div>
+                        <div class="stat-val">30+</div>
+                        <div class="stat-label">Coffee Blends</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="coffee-scene-wrap">
+                    <svg class="coffee-scene" viewBox="0 0 420 480" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="pourGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#6B3A1F" stop-opacity="0.9" />
+                                <stop offset="100%" stop-color="#3D1E0A" stop-opacity="0.7" />
+                            </linearGradient>
+                            <linearGradient id="coffeeGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#5C2E0A" />
+                                <stop offset="100%" stop-color="#3D1A06" />
+                            </linearGradient>
+                            <linearGradient id="cupGrad" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stop-color="#FFFDF9" />
+                                <stop offset="100%" stop-color="#F5E8D8" />
+                            </linearGradient>
+                            <linearGradient id="saucerGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#FFFFFF" />
+                                <stop offset="100%" stop-color="#EDD9BE" />
+                            </linearGradient>
+                            <radialGradient id="glowGrad" cx="50%" cy="50%">
+                                <stop offset="0%" stop-color="#C8732A" stop-opacity="0.25" />
+                                <stop offset="100%" stop-color="#C8732A" stop-opacity="0" />
+                            </radialGradient>
+                            <clipPath id="cupClip">
+                                <path d="M148,228 L156,318 Q158,328 168,330 L252,330 Q262,328 264,318 L272,228 Z" />
+                            </clipPath>
+                        </defs>
+
+                        <!-- Glow halo -->
+                        <ellipse cx="210" cy="310" rx="130" ry="80" fill="url(#glowGrad)" class="anim-glow" />
+
+                        <!-- POURER (enters from top) -->
+                        <g class="pourer-group">
+                            <g class="pourer-anim">
+                                <ellipse cx="210" cy="62" rx="38" ry="18" fill="#2D1208" opacity="0.95" />
+                                <rect x="172" y="62" width="76" height="36" rx="6" fill="#2D1208" opacity="0.95" />
+                                <ellipse cx="210" cy="98" rx="38" ry="12" fill="#1A0A04" opacity="0.9" />
+                                <path d="M210,98 Q210,108 214,114 L220,118" stroke="#1A0A04" stroke-width="7"
+                                    fill="none" stroke-linecap="round" />
+                                <path d="M248,70 Q268,70 268,82 Q268,94 248,94" stroke="#3D1A08" stroke-width="5"
+                                    fill="none" stroke-linecap="round" />
+                                <ellipse cx="196" cy="66" rx="10" ry="4" fill="rgba(255,255,255,0.15)"
+                                    transform="rotate(-20,196,66)" />
+                            </g>
+                        </g>
+
+                        <!-- POUR STREAM -->
+                        <g class="pour-stream-group">
+                            <path class="pour-stream" d="M218,118 Q219,160 217,195 Q216,215 215,228"
+                                stroke="url(#pourGrad)" stroke-width="5" fill="none" stroke-linecap="round" />
+                            <path class="pour-stream-shimmer" d="M220,130 Q221,165 219,198 Q218,215 217,228"
+                                stroke="rgba(255,200,120,0.25)" stroke-width="2" fill="none" stroke-linecap="round" />
+                            <circle class="droplet d1" cx="218" cy="145" r="3" fill="#7A4010" opacity="0.7" />
+                            <circle class="droplet d2" cx="216" cy="175" r="2" fill="#7A4010" opacity="0.6" />
+                            <circle class="droplet d3" cx="217" cy="205" r="2.5" fill="#7A4010" opacity="0.8" />
+                        </g>
+
+                        <!-- CUP (enters from left) -->
+                        <g class="cup-group">
+                            <ellipse cx="210" cy="342" rx="80" ry="14" fill="url(#saucerGrad)" stroke="#D9C4A8"
+                                stroke-width="1" />
+                            <ellipse cx="210" cy="338" rx="68" ry="10" fill="white" stroke="#E8D5BE"
+                                stroke-width="0.5" />
+                            <path d="M148,228 L156,318 Q158,330 168,332 L252,332 Q262,330 264,318 L272,228 Z"
+                                fill="url(#cupGrad)" stroke="#D9C4A8" stroke-width="1.5" />
+                            <ellipse cx="210" cy="228" rx="62" ry="14" fill="white" stroke="#D9C4A8"
+                                stroke-width="1.5" />
+                            <g clip-path="url(#cupClip)">
+                                <rect class="coffee-fill" x="146" y="320" width="128" height="12"
+                                    fill="url(#coffeeGrad)" rx="2" />
+                                <ellipse class="foam-ellipse" cx="210" cy="268" rx="52" ry="10" fill="#C8843A"
+                                    opacity="0.5" />
+                                <ellipse class="foam-ellipse" cx="210" cy="268" rx="38" ry="7" fill="#D4945A"
+                                    opacity="0.4" />
+                                <g class="latte-art" opacity="0">
+                                    <path
+                                        d="M210,258 C204,248 192,250 192,260 C192,268 210,278 210,278 C210,278 228,268 228,260 C228,250 216,248 210,258Z"
+                                        fill="rgba(255,220,160,0.55)" />
+                                </g>
+                            </g>
+                            <ellipse cx="210" cy="230" rx="58" ry="11" fill="rgba(60,20,5,0.18)" />
+                            <path d="M272,256 Q300,256 300,278 Q300,300 272,300" stroke="#D0B898" stroke-width="10"
+                                fill="none" stroke-linecap="round" />
+                            <path d="M272,256 Q296,256 296,278 Q296,300 272,300" stroke="white" stroke-width="5"
+                                fill="none" stroke-linecap="round" opacity="0.6" />
+                            <path d="M158,240 Q162,290 163,315" stroke="rgba(255,255,255,0.5)" stroke-width="4"
+                                fill="none" stroke-linecap="round" />
+                            <path d="M165,238 Q168,275 169,305" stroke="rgba(255,255,255,0.25)" stroke-width="2"
+                                fill="none" stroke-linecap="round" />
+                            <g class="splash-group" opacity="0">
+                                <circle cx="195" cy="222" r="4" fill="#7A4010" opacity="0.7" />
+                                <circle cx="225" cy="220" r="3" fill="#7A4010" opacity="0.6" />
+                                <circle cx="210" cy="218" r="2.5" fill="#9A5820" opacity="0.8" />
+                                <circle cx="185" cy="225" r="2" fill="#7A4010" opacity="0.5" />
+                                <circle cx="236" cy="224" r="2" fill="#7A4010" opacity="0.5" />
+                            </g>
+                        </g>
+
+                        <!-- STEAM WISPS -->
+                        <g class="steam-group">
+                            <path class="steam s1" d="M190,224 C186,210 194,200 190,186 C186,172 194,162 190,148"
+                                stroke="rgba(255,255,255,0.55)" stroke-width="3" fill="none" stroke-linecap="round" />
+                            <path class="steam s2" d="M210,220 C206,204 214,192 210,176 C206,160 214,148 210,132"
+                                stroke="rgba(255,255,255,0.65)" stroke-width="3.5" fill="none" stroke-linecap="round" />
+                            <path class="steam s3" d="M230,224 C226,210 234,200 230,186 C226,172 234,162 230,148"
+                                stroke="rgba(255,255,255,0.55)" stroke-width="3" fill="none" stroke-linecap="round" />
+                            <path class="steam s4" d="M175,228 C172,216 178,208 175,196 C172,184 178,174 175,162"
+                                stroke="rgba(255,255,255,0.3)" stroke-width="2" fill="none" stroke-linecap="round" />
+                            <path class="steam s5" d="M245,228 C242,216 248,208 245,196 C242,184 248,174 245,162"
+                                stroke="rgba(255,255,255,0.3)" stroke-width="2" fill="none" stroke-linecap="round" />
+                        </g>
+
+                        <!-- FLOATING BEANS -->
+                        <g opacity="0.6">
+                            <ellipse class="bean b1" cx="108" cy="290" rx="10" ry="6" fill="#4A2008"
+                                transform="rotate(-30,108,290)" />
+                            <ellipse class="bean b2" cx="320" cy="270" rx="8" ry="5" fill="#4A2008"
+                                transform="rotate(20,320,270)" />
+                            <ellipse class="bean b3" cx="95" cy="340" rx="7" ry="4" fill="#5C2E0A"
+                                transform="rotate(15,95,340)" />
+                            <ellipse class="bean b4" cx="330" cy="330" rx="9" ry="5.5" fill="#3D1A06"
+                                transform="rotate(-25,330,330)" />
+                        </g>
+
+                        <!-- Rating badge -->
+                        <g class="rating-badge" transform="translate(290,160)" opacity="0">
+                            <rect x="0" y="0" width="90" height="42" rx="21" fill="rgba(200,115,42,0.95)" />
+                            <text x="45" y="16" text-anchor="middle" fill="white" font-size="9"
+                                font-family="DM Sans,sans-serif" font-weight="700" dy="0">★ 4.9 RATING</text>
+                            <text x="45" y="30" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="8"
+                                font-family="DM Sans,sans-serif">230+ Reviews</text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MENU -->
+    <section id="menu">
+        <div class="menu-header">
+            <div>
+                <div class="section-label reveal">Our Menu</div>
+                <h2 class="section-title reveal">What would you like<br>to brew today?</h2>
+            </div>
+        </div>
+        <div class="category-tabs">
+            <button class="tab active" onclick="filterMenu('all',this)">All</button>
+            <button class="tab" onclick="filterMenu('cappuccino',this)">Cappuccino</button>
+            <button class="tab" onclick="filterMenu('latte',this)">Latte</button>
+            <button class="tab" onclick="filterMenu('machiato',this)">Machiato</button>
+            <button class="tab" onclick="filterMenu('cold',this)">Cold Brew</button>
+            <button class="tab" onclick="filterMenu('snack',this)">Snacks</button>
+        </div>
+        <div class="menu-grid" id="menu-grid"></div>
+    </section>
+
+    <!-- WHY US -->
+    <div id="why">
+        <div class="why-inner">
+            <div class="why-grid">
+                <div class="why-text">
+                    <div class="section-label reveal">Why Cafe 1 Cr</div>
+                    <h2 class="section-title reveal">Every cup crafted<br>with passion</h2>
+                    <p class="section-sub reveal">We source the finest beans from across the globe and roast them
+                        in-house to give you an experience unlike any other.</p>
+                    <ul class="feature-list">
+                        <li class="feature-item reveal">
+                            <div class="feature-icon">🌍</div>
+                            <div>
+                                <h4>Single Origin Beans</h4>
+                                <p>Ethically sourced from farms in Ethiopia, Colombia, and Coorg — each with a distinct
+                                    character.</p>
+                            </div>
+                        </li>
+                        <li class="feature-item reveal">
+                            <div class="feature-icon">🔥</div>
+                            <div>
+                                <h4>In-House Roasting</h4>
+                                <p>Roasted fresh every morning so your cup captures peak flavor, aroma, and richness.
+                                </p>
+                            </div>
+                        </li>
+                        <li class="feature-item reveal">
+                            <div class="feature-icon">⚡</div>
+                            <div>
+                                <h4>Fast Delivery</h4>
+                                <p>Hot coffee delivered to your doorstep within 20–30 minutes. Always on time, always
+                                    hot.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="why-image reveal">
+                    <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80"
+                        alt="Coffee being made" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SPECIAL -->
+    <section id="special">
+        <div class="special-wrap">
+            <div class="special-img-wrap reveal">
+                <img src="https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=800&q=80"
+                    alt="Cappuccino Special" />
+                <div class="special-badge-card">
+                    <div class="icon">☕</div>
+                    <div><strong>Chef's Special</strong><span>Signature Cappuccino</span></div>
+                </div>
+            </div>
+            <div class="special-info reveal">
+                <div class="section-label">Featured Drink</div>
+                <h2 class="section-title">Cappuccino<br><em style="font-style:italic;color:var(--brown)">with
+                        Chocolate</em></h2>
+                <div class="special-rating"><span class="stars">★★★★★</span><span class="rating-val">4.8</span><span
+                        class="rating-count">(230 reviews)</span></div>
+                <p class="special-desc">A cappuccino is an approximately 160 ml (5 oz) beverage, made with 25 ml of
+                    espresso coffee and 85 ml of fresh steamed milk. Topped with rich chocolate shavings and a dusting
+                    of cocoa for that perfect finish.</p>
+                <div>
+                    <div class="modal-size-label">Choose Size</div>
+                    <div class="size-selector">
+                        <button class="size-btn" onclick="setSizeActive(this)">S</button>
+                        <button class="size-btn active" onclick="setSizeActive(this)">M</button>
+                        <button class="size-btn" onclick="setSizeActive(this)">L</button>
+                    </div>
+                </div>
+                <div class="special-price">$ 4.53</div>
+                <div style="display:flex;gap:14px;margin-top:24px;">
+                    <button class="btn-primary" style="padding:14px 36px;font-size:1rem;"
+                        onclick="addToCart({id:99,name:'Cappuccino with Chocolate',price:4.53,img:'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=400&q=80'});showToast('Added to cart!')">Buy
+                        Now</button>
+                    <button class="btn-outline" style="padding:14px 24px;">♡ Wishlist</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ORDER STEPS -->
+    <div id="order-section">
+        <div class="order-inner">
+            <div class="section-label reveal">How It Works</div>
+            <h2 class="section-title reveal">Order in 4 easy steps</h2>
+            <p class="section-sub reveal">From selection to your doorstep, we make it seamless.</p>
+            <div class="steps-grid">
+                <div class="step-card reveal">
+                    <div class="step-icon">📍</div>
+                    <div class="step-num">1</div>
+                    <h4>Set Location</h4>
+                    <p>Enter your delivery address and we'll find the nearest Cafe 1 Cr outlet for you.</p>
+                </div>
+                <div class="step-card reveal">
+                    <div class="step-icon">☕</div>
+                    <div class="step-num">2</div>
+                    <h4>Choose Your Coffee</h4>
+                    <p>Browse our menu and pick your favorite brew, size, and customizations.</p>
+                </div>
+                <div class="step-card reveal">
+                    <div class="step-icon">💳</div>
+                    <div class="step-num">3</div>
+                    <h4>Pay Securely</h4>
+                    <p>Pay with Cash, UPI, or Card. Get exclusive discounts on your first order.</p>
+                </div>
+                <div class="step-card reveal">
+                    <div class="step-icon">🚀</div>
+                    <div class="step-num">4</div>
+                    <h4>Fast Delivery</h4>
+                    <p>Sit back and relax. Your hot coffee arrives within 20–30 minutes, tracked live.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELIVERY -->
+    <section id="delivery">
+        <div class="section-label reveal">Live Tracking</div>
+        <h2 class="section-title reveal">Know exactly when your<br>coffee arrives</h2>
+        <p class="section-sub reveal" style="margin-bottom:48px;">Real-time GPS tracking so your brew is always just
+            minutes away.</p>
+        <div class="delivery-grid">
+            <div>
+                <div class="delivery-card reveal">
+                    <h4>Your Delivery</h4>
+                    <p>Delivering to: Krishna Kunj, Fl 12, Near Jawaharlal Nehru Road, Karvenagar, Pune</p>
+                    <div class="delivery-info-row"><span class="d-icon">☕</span>
+                        <div>
+                            <div class="d-label">Order</div>
+                            <div class="d-val">Cappuccino with Chocolate</div>
+                        </div>
+                    </div>
+                    <div class="delivery-info-row"><span class="d-icon">💰</span>
+                        <div>
+                            <div class="d-label">Payment</div>
+                            <div class="d-val">Cash on Delivery • $ 5.53</div>
+                        </div>
+                    </div>
+                    <div class="delivery-info-row"><span class="d-icon">🏍️</span>
+                        <div>
+                            <div class="d-label">Courier</div>
+                            <div class="d-val">Sanjay Wagh — Personal Courier</div>
+                        </div>
+                    </div>
+                    <div style="margin-top:20px;">
+                        <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:8px;">
+                            <span style="color:var(--text-muted)">Estimated arrival</span><strong
+                                style="color:var(--brown)">10 minutes</strong></div>
+                        <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="map-mock reveal">
+                <img src="https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=800&q=80" alt="Map"
+                    style="filter:sepia(30%) hue-rotate(60deg);" />
+                <div class="map-overlay">
+                    <div><strong>10 minutes left</strong><br><span>Delivering to Karvenagar, Pune</span></div>
+                    <div class="eta-badge">Live 📍</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TESTIMONIALS -->
+    <section id="testimonials">
+        <div style="text-align:center;margin-bottom:48px;">
+            <div class="section-label reveal" style="text-align:center;">Customer Love</div>
+            <h2 class="section-title reveal" style="text-align:center;">What our regulars say</h2>
+        </div>
+        <div class="testimonials-grid">
+            <div class="testi-card reveal">
+                <div class="testi-stars">★★★★★</div>
+                <p class="testi-text">"The cappuccino here is absolutely divine. I order it every morning before work —
+                    it has become my daily ritual. Nothing else comes close!"</p>
+                <div class="testi-author"><img src="https://randomuser.me/api/portraits/women/44.jpg"
+                        class="testi-avatar" alt="" />
+                    <div>
+                        <div class="testi-name">Priya Sharma</div>
+                        <div class="testi-role">Regular Customer · Pune</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testi-card reveal">
+                <div class="testi-stars">★★★★★</div>
+                <p class="testi-text">"Fast delivery, piping hot coffee, and the most generous portions. The cold brew
+                    is a game changer on hot Pune afternoons. Highly recommend!"</p>
+                <div class="testi-author"><img src="https://randomuser.me/api/portraits/men/32.jpg" class="testi-avatar"
+                        alt="" />
+                    <div>
+                        <div class="testi-name">Arjun Mehta</div>
+                        <div class="testi-role">Coffee Enthusiast · Pune</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testi-card reveal">
+                <div class="testi-stars">★★★★☆</div>
+                <p class="testi-text">"The chocolate cappuccino with oat milk is everything. I switched from a big chain
+                    after my first sip from Cafe 1 Cr. Never looking back!"</p>
+                <div class="testi-author"><img src="https://randomuser.me/api/portraits/women/68.jpg"
+                        class="testi-avatar" alt="" />
+                    <div>
+                        <div class="testi-name">Sneha Kulkarni</div>
+                        <div class="testi-role">Food Blogger · Pune</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <div id="cta-section">
+        <div class="cta-inner">
+            <h2>Ready for your perfect cup?</h2>
+            <p>Order now and get 20% off your first delivery. Use code CAFE1CR at checkout.</p>
+            <button class="btn-cta" onclick="document.getElementById('menu').scrollIntoView({behavior:'smooth'})">Order
+                Now — Get 20% Off</button>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-inner">
+            <div class="footer-grid">
+                <div class="footer-brand"><span class="nav-logo">Cafe <span style="color:white">1 Cr</span></span>
+                    <p>Coffee so good, your taste buds will love it. Serving Pune's finest brews since 2019.</p>
+                </div>
+                <div class="footer-col">
+                    <h5>Menu</h5>
+                    <ul>
+                        <li><a href="#">Cappuccino</a></li>
+                        <li><a href="#">Latte</a></li>
+                        <li><a href="#">Machiato</a></li>
+                        <li><a href="#">Cold Brew</a></li>
+                        <li><a href="#">Snacks</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h5>Company</h5>
+                    <ul>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Our Story</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Blog</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h5>Contact</h5>
+                    <ul>
+                        <li><a href="#">📍 Karvenagar, Pune</a></li>
+                        <li><a href="#">📞 +91 98765 43210</a></li>
+                        <li><a href="#">✉️ hello@cafe1cr.in</a></li>
+                        <li><a href="#">Instagram</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom"><span>© 2025 Cafe 1 Cr. All rights reserved.</span><span>Made with ☕ in
+                    Pune</span></div>
+        </div>
+    </footer>
+
+    <!-- CART FAB -->
+    <button class="cart-fab" onclick="openCart()">🛒<span class="cart-badge" id="cart-badge">0</span></button>
+
+    <!-- ITEM MODAL -->
+    <div class="modal-backdrop" id="modal" onclick="closeModal(event)">
+        <div class="modal-wrap">
+            <button class="modal-close" onclick="document.getElementById('modal').classList.remove('open')">✕</button>
+            <div class="modal">
+                <img id="modal-img" src="" alt="" class="modal-img" />
+                <div class="modal-body">
+                    <div class="modal-name" id="modal-name"></div>
+                    <div class="modal-sub" id="modal-sub"></div>
+                    <div class="special-rating" style="margin-top:10px;"><span class="stars">★★★★★</span><span
+                            class="rating-val">4.8</span><span class="rating-count">(230)</span></div>
+                    <p class="modal-desc" id="modal-desc"></p>
+                    <div class="modal-size-label">Choose Size</div>
+                    <div class="size-selector">
+                        <button class="size-btn" onclick="setSizeActive(this)">S</button>
+                        <button class="size-btn active" onclick="setSizeActive(this)">M</button>
+                        <button class="size-btn" onclick="setSizeActive(this)">L</button>
+                    </div>
+                    <div class="modal-footer">
+                        <div>
+                            <div style="font-size:0.8rem;color:var(--text-muted)">Price</div>
+                            <div class="modal-price" id="modal-price"></div>
+                        </div>
+                        <div class="qty-control">
+                            <button class="qty-btn" onclick="changeQty(-1)">−</button>
+                            <span class="qty-val" id="modal-qty">1</span>
+                            <button class="qty-btn" onclick="changeQty(1)">+</button>
+                        </div>
+                        <button class="btn-primary btn-buy" onclick="addFromModal()">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast"
+        style="position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--dark);color:white;padding:12px 28px;border-radius:50px;font-size:0.9rem;font-weight:600;opacity:0;transition:all 0.3s;z-index:400;pointer-events:none;white-space:nowrap;">
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+
+</html>
