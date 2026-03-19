@@ -168,7 +168,7 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
                     </div>
                   </label>
                   {paymentMethod === 'upi' && (
-                    <div style={{ padding: '0 16px 16px 52px', display: 'flex', gap: '16px', alignItems: 'center', animation: 'fadeUp 0.3s ease forwards' }}>
+                    <div className="payment-expanded" style={{ display: 'flex', gap: '16px', alignItems: 'center', animation: 'fadeUp 0.3s ease forwards' }}>
                       <div style={{ background: 'white', padding: '8px', borderRadius: '8px', border: '1px solid var(--border)' }}>
                         <img src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=upi://pay?pa=cafe1cr@ybl&pn=Cafe1Cr&am=${total}&cu=INR`} alt="UPI QR Code" style={{ width: '100px', height: '100px', display: 'block' }} />
                       </div>
@@ -192,7 +192,7 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
                     </div>
                   </label>
                   {paymentMethod === 'card' && (
-                    <div style={{ padding: '0 16px 16px 52px', animation: 'fadeUp 0.3s ease forwards' }}>
+                    <div className="payment-expanded" style={{ animation: 'fadeUp 0.3s ease forwards' }}>
                       <div style={{ display: 'grid', gap: '12px' }}>
                         <input type="text" placeholder="Card Number" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.9rem' }} />
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
