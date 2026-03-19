@@ -295,6 +295,7 @@ footer{background:var(--dark);padding:80px 8vw 40px;color:rgba(255,255,255,0.5);
   section, #why, #cta-section { padding: 48px 16px; }
   .order-inner, .why-inner { padding: 0 16px; }
   nav { padding: 0 16px; height: 60px; }
+  .nav-right .btn-outline { display: none; }
   .btn-primary, .btn-hero-primary { font-size: 0.85rem; padding: 10px 20px; }
   .menu-grid { grid-template-columns: 1fr; }
   .modal { width: 95vw; border-radius: 20px; }
