@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function Navbar({ cartCount, openCart }) {
+export default function Navbar({ cartCount, openCart, isAdmin }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
@@ -17,13 +17,18 @@ export default function Navbar({ cartCount, openCart }) {
       <div className="nav-right">
         <button 
           className="btn-outline" 
-          onClick={() => document.getElementById('menu').scrollIntoView({ behavior: 'smooth' })}
+          onClick={() => {
+            if (isAdmin) window.location.hash = '#menu';
+            else document.getElementById('menu').scrollIntoView({ behavior: 'smooth' });
+          }}
         >
-          View Menu
+          {isAdmin ? 'Back to Site' : 'View Menu'}
         </button>
-        <button className="btn-primary" onClick={openCart}>
-          🛒 Cart {cartCount > 0 && `(${cartCount})`}
-        </button>
+        {!isAdmin && (
+          <button className="btn-primary" onClick={openCart}>
+            🛒 Cart {cartCount > 0 && `(${cartCount})`}
+          </button>
+        )}
         <button className="mobile-toggle" onClick={() => setIsMobileOpen(!isMobileOpen)}>
           {isMobileOpen ? '✕' : '☰'}
         </button>

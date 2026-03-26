@@ -40,7 +40,7 @@ export default function Footer() {
         </div>
         <div className="footer-bottom">
           <span>© 2026 Cafe 1 Cr. All rights reserved.</span>
-          <span>Made with ☕ in Pune</span>
+          <span>Made with ☕ in Pune · <a className="admin-link" href="#admin">Admin</a></span>
         </div>
       </div>
     </footer>

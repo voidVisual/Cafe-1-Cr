@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./api
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - cafe-network
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - cafe-network
+
+networks:
+  cafe-network:
+    driver: bridge
