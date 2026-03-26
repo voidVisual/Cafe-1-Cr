@@ -13,13 +13,22 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
     }
   };
 
+  const handleProceed = () => {
+    setStep('payment');
+  };
+
   const handlePayment = async () => {
     setIsProcessing(true);
 
     if (paymentMethod === 'cash') {
       setTimeout(() => {
         setIsProcessing(false);
-        placeOrder("ORD-CASH-" + Math.floor(Math.random() * 9999)); 
+        placeOrder({
+          orderId: "ORD-CASH-" + Math.floor(Math.random() * 9999),
+          items: cart,
+          total,
+          paymentMethod
+        });
       }, 1000);
       return;
     }
@@ -65,7 +74,12 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
             
             if (verifyData.success) {
               setIsProcessing(false);
-              placeOrder(verifyData.order_id);
+              placeOrder({
+                orderId: verifyData.order_id,
+                items: cart,
+                total,
+                paymentMethod
+              });
             } else {
               alert("Payment verification failed!");
               setIsProcessing(false);

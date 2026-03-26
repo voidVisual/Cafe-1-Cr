@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Menu from './components/Menu';
@@ -10,11 +10,44 @@ import Testimonials from './components/Testimonials';
 import Footer from './components/Footer';
 import CartModal from './components/CartModal';
 import OfferTicker from './components/OfferTicker';
+import AdminDashboard from './components/AdminDashboard';
+import { menuItems as defaultMenuItems } from './data/menuData';
+
+const MENU_STORAGE_KEY = 'cafe1cr_menu';
+const ORDERS_STORAGE_KEY = 'cafe1cr_orders';
 
 function App() {
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(null);
+  const [menuItems, setMenuItems] = useState(() => {
+    const stored = localStorage.getItem(MENU_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : defaultMenuItems;
+  });
+  const [orders, setOrders] = useState(() => {
+    const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  });
+  const [isAdmin, setIsAdmin] = useState(window.location.hash === '#admin');
+
+  const categories = useMemo(() => {
+    const set = new Set(menuItems.map(item => item.category).filter(Boolean));
+    return ['all', ...Array.from(set)];
+  }, [menuItems]);
+
+  useEffect(() => {
+    const handleHash = () => setIsAdmin(window.location.hash === '#admin');
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(menuItems));
+  }, [menuItems]);
+
+  useEffect(() => {
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+  }, [orders]);
 
   // Reveal animation logic
   useEffect(() => {
@@ -50,7 +83,22 @@ function App() {
     ).filter(c => c.qty > 0));
   };
 
-  const handleOrderCompletion = (orderId = "ORD-12345") => {
+  const handleOrderCompletion = (orderInfo = {}) => {
+    const orderId = orderInfo.orderId || "ORD-12345";
+    const items = orderInfo.items || cart;
+    const total = orderInfo.total || items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const paymentMethod = orderInfo.paymentMethod || 'unknown';
+
+    const order = {
+      id: orderId,
+      status: 'pending',
+      items,
+      total,
+      payment: paymentMethod,
+      createdAt: new Date().toISOString()
+    };
+
+    setOrders(prev => [order, ...prev]);
     setOrderPlaced({ message: "Order placed successfully!", order_id: orderId });
     setCart([]);
     setIsCartOpen(false);
@@ -62,12 +110,33 @@ function App() {
     }, 400);
   };
 
+  if (isAdmin) {
+    return (
+      <AdminDashboard
+        orders={orders}
+        menuItems={menuItems}
+        onUpdateOrderStatus={(id, status) => {
+          setOrders(prev => prev.map(order => order.id === id ? { ...order, status } : order));
+        }}
+        onCreateOrder={(order) => {
+          setOrders(prev => [order, ...prev]);
+        }}
+        onAddMenuItem={(item) => setMenuItems(prev => [item, ...prev])}
+        onUpdateMenuItem={(item) => setMenuItems(prev => prev.map(m => m.id === item.id ? item : m))}
+        onRemoveMenuItem={(id) => setMenuItems(prev => prev.filter(m => m.id !== id))}
+        onClearOrders={() => setOrders([])}
+        onResetMenu={() => setMenuItems(defaultMenuItems)}
+        onExit={() => { window.location.hash = ''; }}
+      />
+    );
+  }
+
   return (
     <>
       <Navbar cartCount={cart.reduce((s, c) => s + c.qty, 0)} openCart={() => setIsCartOpen(true)} />
       <OfferTicker />
       <Hero />
-      <Menu addToCart={addToCart} />
+      <Menu addToCart={addToCart} items={menuItems} categories={categories} />
       <WhyUs />
       <Special addToCart={addToCart} />
       <OrderSteps />

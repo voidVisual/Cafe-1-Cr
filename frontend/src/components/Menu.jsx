@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
-import { menuItems, categories } from '../data/menuData';
-
-export default function Menu({ addToCart }) {
+export default function Menu({ addToCart, items, categories }) {
   const [filter, setFilter] = useState('all');
 
-  const filtered = filter === 'all' ? menuItems : menuItems.filter(i => i.category === filter);
+  useEffect(() => {
+    if (!categories.includes(filter)) {
+      setFilter('all');
+    }
+  }, [categories, filter]);
+
+  const filtered = filter === 'all' ? items : items.filter(i => i.category === filter);
 
   return (
     <section id="menu">
