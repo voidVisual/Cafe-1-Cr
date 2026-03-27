@@ -4,23 +4,36 @@ services:
   api:
     build:
       context: ./api
+      dockerfile: Dockerfile
+    container_name: cafe_api
     ports:
       - "8000:8000"
     restart: unless-stopped
-    networks:
-      - cafe-network
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MONGODB_URI=mongodb://mongo:27017
+    depends_on:
+      - mongo
 
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cafe_frontend
     ports:
       - "80:80"
     depends_on:
       - api
     restart: unless-stopped
-    networks:
-      - cafe-network
 
-networks:
-  cafe-network:
-    driver: bridge
+  mongo:
+    image: mongo:7
+    container_name: cafe_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
