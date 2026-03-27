@@ -49,24 +49,33 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
 
       if (!orderData.order_id) throw new Error("Could not initiate payment.");
 
-      // 2. Open Razorpay Checkout Modal
-      const options = {
-        key: "rzp_test_placeholderKey", 
-        amount: orderData.amount,
-        currency: "INR",
-        name: "Cafe 1 Cr",
-        description: "Order Checkout",
-        order_id: orderData.order_id,
-        handler: async function (response) {
+      // 2. Open Cashfree Checkout Modal
+      const cashfree = window.Cashfree({
+        mode: "sandbox", 
+      });
+      
+      let checkoutOptions = {
+        paymentSessionId: orderData.payment_session_id,
+        redirectTarget: "_modal",
+      };
+      
+      cashfree.checkout(checkoutOptions).then(async (result) => {
+        if(result.error){
+          alert("Payment Failed: " + result.error.message);
+          setIsProcessing(false);
+        }
+        if(result.redirect){
+          console.log("Payment will be redirected");
+        }
+        if(result.paymentDetails){
+          console.log("Payment completed");
           try {
             // 3. Verify Payment
             const verifyRes = await fetch('/api/payment/verify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                razorpay_payment_id: response.razorpay_payment_id || "mock_payment_id",
-                razorpay_order_id: response.razorpay_order_id || orderData.order_id,
-                razorpay_signature: response.razorpay_signature || "mock_signature",
+                order_id: orderData.order_id,
                 orderData: { items: cart, total: total, address: 'Pune', phone: '9999999999' }
               })
             });
@@ -75,7 +84,7 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
             if (verifyData.success) {
               setIsProcessing(false);
               placeOrder({
-                orderId: verifyData.order_id,
+                orderId: verifyData.db_order_id,
                 items: cart,
                 total,
                 paymentMethod
@@ -89,21 +98,12 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
             alert("Payment verification error.");
             setIsProcessing(false);
           }
-        },
-        prefill: { name: "Customer Name", email: "customer@example.com", contact: "9999999999" },
-        theme: { color: "#9A5820" }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function (response){
-        alert("Payment Failed: " + response.error.description);
-        setIsProcessing(false);
+        }
       });
-      rzp.open();
 
     } catch (err) {
       console.error(err);
-      alert("Error initiating Razorpay payment.");
+      alert("Error initiating Cashfree payment.");
       setIsProcessing(false);
     }
   };

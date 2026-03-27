@@ -29,6 +29,7 @@ function App() {
     return stored ? JSON.parse(stored) : [];
   });
   const [isAdmin, setIsAdmin] = useState(window.location.hash === '#admin');
+  const [toast, setToast] = useState(null);
 
   const categories = useMemo(() => {
     const set = new Set(menuItems.map(item => item.category).filter(Boolean));
@@ -70,7 +71,8 @@ function App() {
       }
       return [...prev, { ...item, qty }];
     });
-    alert(`${item.name} added to cart!`);
+    setToast(`Added ${item.name} to bag`);
+    setTimeout(() => setToast(null), 3000);
   };
 
   const removeFromCart = (id) => {
@@ -144,6 +146,12 @@ function App() {
       <Testimonials />
       <Footer />
       
+      {/* Toast Notification */}
+      <div className={`toast-notification ${toast ? 'show' : ''}`}>
+        <span className="toast-icon">✓</span>
+        <span className="toast-text">{toast}</span>
+      </div>
+
       {/* Cart FAB */}
       <button className="cart-fab" onClick={() => setIsCartOpen(true)}>
         🛒<span className="cart-badge">{cart.reduce((s, c) => s + c.qty, 0)}</span>

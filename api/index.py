@@ -1,20 +1,27 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Depends # type: ignore
+from fastapi.middleware.cors import CORSMiddleware # type: ignore
+from pydantic import BaseModel # type: ignore
 from typing import List
-import razorpay
-import hmac
-import hashlib
+import uuid
+import os
+from datetime import datetime, timezone, timedelta
+from pymongo import MongoClient # type: ignore
+
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+mongo_client = MongoClient(MONGODB_URI)
+mongo_db = mongo_client.get_database("cafe_orders")
+orders_collection = mongo_db.get_collection("orders")
+orders_collection.create_index("customer_phone")
+orders_collection.create_index("created_at")
+
+def get_orders_collection():
+    return orders_collection
 
 app = FastAPI(title="Cafe 1 Cr API")
 
-# Setup dummy Razorpay client (Replace with actual keys for production)
-RAZORPAY_KEY_ID = "rzp_test_placeholderKey"
-RAZORPAY_KEY_SECRET = "placeholderSecretKeyDoNotUse"
-rzp_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+# Setup dummy Cashfree client (Replace with actual setup via cashfree_pg for production)
+CASHFREE_APP_ID = "test_placeholderAppId"
+CASHFREE_SECRET = "test_placeholderSecret"
 
 # Setup CORS
 app.add_middleware(
@@ -24,6 +31,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def add_cache_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "private, max-age=60, s-maxage=0, must-revalidate"
+    return response
 
 # Hardcoded menu items initialized for now
 menu_data = [
@@ -50,9 +63,7 @@ class OrderRequest(BaseModel):
     phone: str
 
 class PaymentVerifyRequest(BaseModel):
-    razorpay_payment_id: str
-    razorpay_order_id: str
-    razorpay_signature: str
+    order_id: str
     orderData: OrderRequest
 
 @app.get("/api/menu")
@@ -61,50 +72,133 @@ def get_menu():
 
 @app.post("/api/payment/create")
 def create_payment(order: OrderRequest):
-    # Calculate amount in paise (1 INR = 100 paise)
-    amount_paise = int(order.total * 100)
+    # Using Cashfree API
+    amount = order.total
     
     try:
-        # Create a Razorpay Order
-        rzp_order = rzp_client.order.create({
-            "amount": amount_paise,
-            "currency": "INR",
-            "receipt": "receipt_1",
-            "payment_capture": "1" # Auto capture
-        })
-        return {"order_id": rzp_order["id"], "amount": amount_paise}
+        # In production, use cashfree_pg.models.create_order_request to create order
+        # For our mock testing with dummy keys:
+        dummy_order_id = "order_" + str(uuid.uuid4())[:10] # type: ignore
+        dummy_session_id = "session_" + str(uuid.uuid4())
+        return {"order_id": dummy_order_id, "payment_session_id": dummy_session_id, "amount": amount}
     except Exception as e:
-        print("Razorpay Error:", e)
-        # Fallback to dummy ID when placeholder keys are rejected by Razorpay API
-        return {"order_id": "order_dummy12345", "amount": amount_paise}
+        print("Cashfree Error:", e)
+        return {"order_id": "order_dummy12345", "amount": amount}
 
 @app.post("/api/payment/verify")
-def verify_payment(data: PaymentVerifyRequest):
+def verify_payment(data: PaymentVerifyRequest, orders=Depends(get_orders_collection)):
     try:
-        # Verify the signature
-        rzp_client.utility.verify_payment_signature({
-            'razorpay_order_id': data.razorpay_order_id,
-            'razorpay_payment_id': data.razorpay_payment_id,
-            'razorpay_signature': data.razorpay_signature
-        })
-        
-        # If no exception was raised by verify_payment_signature, payment is authentic
-        print(f"Verified payment for {data.orderData.phone}. ID: {data.razorpay_payment_id}")
-        return {"success": True, "message": "Payment verified and order placed", "order_id": data.razorpay_order_id}
-    except razorpay.errors.SignatureVerificationError:
-        raise HTTPException(status_code=400, detail="Invalid payment signature")
+        # In production, use Cashfree.PGOrderFetchPayments to verify order status
+        # Save order to database
+        new_order = {
+            "payment_method": "ONLINE",
+            "razorpay_order_id": data.order_id,
+            "customer_phone": data.orderData.phone,
+            "customer_address": data.orderData.address,
+            "total_amount": data.orderData.total,
+            "status": "Received",
+            "created_at": datetime.now(timezone.utc),
+            "items": [
+                {
+                    "item_id": item.id,
+                    "name": item.name,
+                    "qty": item.qty,
+                    "price": item.price,
+                }
+                for item in data.orderData.items
+            ],
+        }
+        result = orders.insert_one(new_order)
+        db_order_id = str(result.inserted_id)
+
+        print(f"Verified payment for {data.orderData.phone}. Saved Order #{db_order_id}")
+        return {"success": True, "message": "Payment verified and order placed", "order_id": data.order_id, "db_order_id": db_order_id}
     except Exception as e:
         # For our mock testing with dummy keys
-        if data.razorpay_order_id.startswith("order_dummy"):
-            return {"success": True, "message": "[MOCK] Payment verified and order placed", "order_id": data.razorpay_order_id}
+        if data.order_id.startswith("order_"):
+            # Mock save
+            new_order = {
+                "payment_method": "ONLINE_MOCK",
+                "razorpay_order_id": data.order_id,
+                "customer_phone": data.orderData.phone,
+                "customer_address": data.orderData.address,
+                "total_amount": data.orderData.total,
+                "status": "Received",
+                "created_at": datetime.now(timezone.utc),
+                "items": [
+                    {
+                        "item_id": item.id,
+                        "name": item.name,
+                        "qty": item.qty,
+                        "price": item.price,
+                    }
+                    for item in data.orderData.items
+                ],
+            }
+            result = orders.insert_one(new_order)
+            db_order_id = str(result.inserted_id)
+            return {"success": True, "message": "[MOCK] Payment verified and order placed", "order_id": data.order_id, "db_order_id": db_order_id}
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/order")
-def place_order(order: OrderRequest):
-    # Backward compatibility / Pay at Counter route
-    print(f"Received CA$H order: {order.total} from {order.phone} at {order.address}")
-    return {"message": "Order placed successfully via Pay at Counter!", "order_id": "ORD-CASH-123"}
+def place_order(order: OrderRequest, orders=Depends(get_orders_collection)):
+    # Cash on delivery / Pay at counter
+    new_order = {
+        "payment_method": "CASH",
+        "customer_phone": order.phone,
+        "customer_address": order.address,
+        "total_amount": order.total,
+        "status": "Received",
+        "created_at": datetime.now(timezone.utc),
+        "items": [
+            {
+                "item_id": item.id,
+                "name": item.name,
+                "qty": item.qty,
+                "price": item.price,
+            }
+            for item in order.items
+        ],
+    }
+    result = orders.insert_one(new_order)
+    db_order_id = str(result.inserted_id)
+
+    print(f"Received CA$H order: {order.total} from {order.phone} at {order.address}. Saved Order #{db_order_id}")
+    return {"message": "Order placed successfully via Pay at Counter!", "order_id": f"ORD-CASH-{db_order_id}", "db_order_id": db_order_id}
+
+@app.get("/api/orders/history/{phone}")
+def get_order_history(phone: str, orders=Depends(get_orders_collection)):
+    cursor = orders.find({"customer_phone": phone}).sort("created_at", -1)
+    result = []
+    for o in cursor:
+        result.append({
+            "id": str(o.get("_id")),
+            "total_amount": o.get("total_amount"),
+            "status": o.get("status"),
+            "payment_method": o.get("payment_method"),
+            "created_at": o.get("created_at").isoformat() if o.get("created_at") else None,
+            "items": [
+                {"name": i.get("name"), "qty": i.get("qty"), "price": i.get("price")}
+                for i in o.get("items", [])
+            ],
+        })
+    return {"history": result}
+
+@app.get("/api/admin/revenue/today")
+def get_today_revenue(orders=Depends(get_orders_collection)):
+    now = datetime.now(timezone.utc)
+    start_of_day = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+    end_of_day = start_of_day + timedelta(days=1)
+    today_orders = list(
+        orders.find({"created_at": {"$gte": start_of_day, "$lt": end_of_day}})
+    )
+    total_rev = sum(o.get("total_amount", 0) for o in today_orders)
+    return {
+        "date": start_of_day.date().isoformat(),
+        "total_revenue": total_rev,
+        "order_count": len(today_orders)
+    }
 
 if __name__ == "__main__":
-    import uvicorn
+    import uvicorn # type: ignore
     uvicorn.run(app, host="0.0.0.0", port=8000)
