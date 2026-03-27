@@ -10,7 +10,6 @@ const emptyItem = {
   reviews: '0'
 };
 
-const ADMIN_PASS_KEY = 'cafe1cr_admin_pass';
 const ADMIN_AUTH_KEY = 'cafe1cr_admin_authed';
 
 export default function AdminDashboard({
@@ -26,13 +25,7 @@ export default function AdminDashboard({
   onExit
 }) {
   const [isAuthed, setIsAuthed] = useState(() => sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true');
-  const [hasPasscode, setHasPasscode] = useState(() => Boolean(localStorage.getItem(ADMIN_PASS_KEY)));
   const [passcode, setPasscode] = useState('');
-  const [setupPasscode, setSetupPasscode] = useState('');
-  const [setupConfirm, setSetupConfirm] = useState('');
-  const [changeCurrent, setChangeCurrent] = useState('');
-  const [changeNext, setChangeNext] = useState('');
-  const [changeConfirm, setChangeConfirm] = useState('');
   const [form, setForm] = useState(emptyItem);
   const [editingId, setEditingId] = useState(null);
   const [query, setQuery] = useState('');
@@ -186,52 +179,12 @@ export default function AdminDashboard({
 
   const handleLogin = (e) => {
     e.preventDefault();
-    const stored = localStorage.getItem(ADMIN_PASS_KEY);
-    if (stored && passcode === stored) {
+    if (passcode === 'admin123') {
       setIsAuthed(true);
       setPasscode('');
       return;
     }
     alert('Incorrect passcode.');
-  };
-
-  const handleSetup = (e) => {
-    e.preventDefault();
-    if (setupPasscode.length < 4) {
-      alert('Passcode should be at least 4 characters.');
-      return;
-    }
-    if (setupPasscode !== setupConfirm) {
-      alert('Passcodes do not match.');
-      return;
-    }
-    localStorage.setItem(ADMIN_PASS_KEY, setupPasscode);
-    setHasPasscode(true);
-    setIsAuthed(true);
-    setSetupPasscode('');
-    setSetupConfirm('');
-  };
-
-  const handleChangePasscode = (e) => {
-    e.preventDefault();
-    const stored = localStorage.getItem(ADMIN_PASS_KEY) || '';
-    if (changeCurrent !== stored) {
-      alert('Current passcode is incorrect.');
-      return;
-    }
-    if (changeNext.length < 4) {
-      alert('New passcode should be at least 4 characters.');
-      return;
-    }
-    if (changeNext !== changeConfirm) {
-      alert('New passcodes do not match.');
-      return;
-    }
-    localStorage.setItem(ADMIN_PASS_KEY, changeNext);
-    setChangeCurrent('');
-    setChangeNext('');
-    setChangeConfirm('');
-    alert('Passcode updated.');
   };
 
   const handleLogout = () => {
@@ -279,7 +232,6 @@ export default function AdminDashboard({
             <div className="hero-badge">Cafe 1 Cr Admin</div>
             <h1 className="admin-hero-title">Admin Access</h1>
             <p className="admin-hero-sub">Secure this dashboard before managing orders and menu updates.</p>
-            {hasPasscode ? (
               <form className="admin-form" onSubmit={handleLogin}>
                 <div className="admin-field">
                   <label>Passcode</label>
@@ -290,23 +242,6 @@ export default function AdminDashboard({
                   <button className="btn-hero-outline" type="button" onClick={onExit}>Back to Site</button>
                 </div>
               </form>
-            ) : (
-              <form className="admin-form" onSubmit={handleSetup}>
-                <div className="admin-field">
-                  <label>Create Passcode</label>
-                  <input type="password" value={setupPasscode} onChange={(e) => setSetupPasscode(e.target.value)} placeholder="Create a passcode" />
-                </div>
-                <div className="admin-field">
-                  <label>Confirm Passcode</label>
-                  <input type="password" value={setupConfirm} onChange={(e) => setSetupConfirm(e.target.value)} placeholder="Confirm passcode" />
-                </div>
-                <div className="admin-actions">
-                  <button className="btn-hero-primary" type="submit">Set Passcode & Enter</button>
-                  <button className="btn-hero-outline" type="button" onClick={onExit}>Back to Site</button>
-                </div>
-              </form>
-            )}
-            <p className="admin-muted">Passcodes are stored locally on this device.</p>
           </div>
         </section>
       </div>
@@ -615,27 +550,10 @@ export default function AdminDashboard({
 
           <div className="admin-card admin-settings">
             <h3>Admin Settings</h3>
-            <form className="admin-form" onSubmit={handleChangePasscode}>
-              <div className="admin-field">
-                <label>Current Passcode</label>
-                <input type="password" value={changeCurrent} onChange={(e) => setChangeCurrent(e.target.value)} placeholder="Current passcode" />
-              </div>
-              <div className="admin-row">
-                <div className="admin-field">
-                  <label>New Passcode</label>
-                  <input type="password" value={changeNext} onChange={(e) => setChangeNext(e.target.value)} placeholder="New passcode" />
-                </div>
-                <div className="admin-field">
-                  <label>Confirm New</label>
-                  <input type="password" value={changeConfirm} onChange={(e) => setChangeConfirm(e.target.value)} placeholder="Confirm passcode" />
-                </div>
-              </div>
-              <div className="admin-actions">
-                <button className="btn-primary" type="submit">Update Passcode</button>
-                <button className="btn-outline" type="button" onClick={handleLogout}>Sign Out</button>
-              </div>
-            </form>
-            <div className="admin-divider"></div>
+            <div className="admin-actions">
+              <button className="btn-outline" type="button" onClick={handleLogout}>Sign Out</button>
+            </div>
+            <div className="admin-divider" style={{ margin: '16px 0' }}></div>
             <div className="admin-actions">
               <button
                 className="btn-outline"
