@@ -10,7 +10,7 @@ const specialItems = [
     desc: "Experience our legendary Thick Cold Coffee. Brewed slowly to extract maximum flavor, this isn't just a drink – it's a rich, creamy indulgence that instantly refreshes and energizes your day.",
     price: 20,
     originalPrice: 45,
-    img: '/img/Thick cold coffee.jpg',
+    img: '/img/thick-cold-coffee.jpg',
     sizes: ['Regular']
   },
   {
@@ -21,7 +21,7 @@ const specialItems = [
     reviews: 420,
     desc: "A classic favorite reimagined. Our rich and creamy Oreo Shake blends premium vanilla ice cream with generous chunks of real Oreo cookies, topped with a luscious chocolate drizzle.",
     price: 70,
-    img: '/img/Oreo Shake.jpg',
+    img: '/img/oreo-shake.jpg',
     sizes: ['Regular', 'Jumbo']
   },
   {

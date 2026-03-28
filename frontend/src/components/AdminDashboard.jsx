@@ -260,7 +260,7 @@ export default function AdminDashboard({
       name: form.name.trim(),
       price: Number(form.price) || 0,
       category: form.category.trim().toLowerCase(),
-      img: form.img.trim() || '/img/Thick cold coffee.jpg',
+      img: form.img.trim() || '/img/thick-cold-coffee.jpg',
       sub: form.sub.trim() || 'Chef special',
       rating: Number(form.rating) || 4.6,
       reviews: Number(form.reviews) || 0
