@@ -36,7 +36,7 @@ export const menuItems = [
   { id: 'm4', name: 'Oreo Shake', price: 70, category: 'milk shake', img: '/img/oreo-shake.jpg', sub: 'Loaded with oreos', rating: 4.9, reviews: 210 },
   { id: 'm5', name: 'Kit-Kat Shake', price: 80, category: 'milk shake', img: '/img/kit-kat-shake.jpg', sub: 'Crunchy kit-kat blend', rating: 4.8, reviews: 180 },
 
-  { id: 'f1', name: 'Salted Fries', price: 70, category: 'french fries', img: '/img/salted-fries-covered-in-salt-sodium', sub: 'Crispy and salted', rating: 4.6, reviews: 130 },
+  { id: 'f1', name: 'Salted Fries', price: 70, category: 'french fries', img: '/img/salted-fries-covered-in-salt-sodium.jpg', sub: 'Crispy and salted', rating: 4.6, reviews: 130 },
   { id: 'f2', name: 'Masala Fries', price: 90, category: 'french fries', img: '/img/masala-fries.jpg', sub: 'Spicy Indian twist', rating: 4.7, reviews: 145 },
   { id: 'f3', name: 'BBQ Fries', price: 80, category: 'french fries', img: '/img/bbq-fries.jpg', sub: 'Smoky BBQ flavor', rating: 4.5, reviews: 95 },
   { id: 'f4', name: 'Peri Peri Fries / Cheese', price: 110, category: 'french fries', img: '/img/peri-peri-fries-cheese.jpg', sub: 'Spicy peri peri', rating: 4.8, reviews: 220 },
@@ -55,7 +55,7 @@ export const menuItems = [
 
   { id: 't1', name: 'Hara Bhara Kabab', price: 70, category: 'timepass', img: '/img/hara-bhara-kabab.jpg', sub: 'Healthy green snack', rating: 4.5, reviews: 80 },
   { id: 't2', name: 'Crispy Onion Rings', price: 80, category: 'timepass', img: '/img/crispy-onion-rings.jpg', sub: 'Golden and crunchy', rating: 4.7, reviews: 150 },
-  { id: 't3', name: 'Cheese Potato Shots', price: 80, category: 'timepass', img: '/img/cheese-potato-shots-serve-enjo', sub: 'Cheesy potato bites', rating: 4.8, reviews: 190 },
+  { id: 't3', name: 'Cheese Potato Shots', price: 80, category: 'timepass', img: '/img/cheese-potato-shots-serve-enjo.jpg', sub: 'Cheesy potato bites', rating: 4.8, reviews: 190 },
   { id: 't4', name: 'Chilli Garlic Shots', price: 99, category: 'timepass', img: '/img/chilli-garlic-shots.jpg', sub: 'Spicy garlic twist', rating: 4.6, reviews: 130 },
   { id: 't5', name: 'Veg Fingers', price: 90, category: 'timepass', img: '/img/veg-fingers.jpg', sub: 'Crispy veggie sticks', rating: 4.4, reviews: 75 },
   { id: 't6', name: 'Chicken Nuggets', price: 99, category: 'timepass', img: '/img/chicken-nuggets.jpg', sub: 'Classic chicken snack', rating: 4.8, reviews: 210 },

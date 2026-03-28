@@ -16,13 +16,44 @@ import { menuItems as defaultMenuItems } from './data/menuData';
 const MENU_STORAGE_KEY = 'cafe1cr_menu';
 const ORDERS_STORAGE_KEY = 'cafe1cr_orders';
 
+const normalizeLocalImgPath = (img) => {
+  if (!img || typeof img !== 'string' || !img.startsWith('/img/')) {
+    return img;
+  }
+
+  const raw = img.slice('/img/'.length);
+  const [namePart, query] = raw.split('?');
+  const cleaned = namePart
+    .replace(/%20/gi, ' ')
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  const hasExt = /\.[a-z0-9]+$/.test(cleaned);
+  const fileName = hasExt ? cleaned : `${cleaned}.jpg`;
+  return `/img/${fileName}${query ? `?${query}` : ''}`;
+};
+
+const normalizeMenuItem = (item) => ({
+  ...item,
+  img: normalizeLocalImgPath(item?.img)
+});
+
 function App() {
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(null);
   const [menuItems, setMenuItems] = useState(() => {
     const stored = localStorage.getItem(MENU_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : defaultMenuItems;
+    if (!stored) return defaultMenuItems;
+
+    try {
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed) ? parsed.map(normalizeMenuItem) : defaultMenuItems;
+    } catch {
+      return defaultMenuItems;
+    }
   });
   const [orders, setOrders] = useState(() => {
     const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
@@ -45,6 +76,14 @@ function App() {
   useEffect(() => {
     localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(menuItems));
   }, [menuItems]);
+
+  useEffect(() => {
+    setMenuItems(prev => {
+      const normalized = prev.map(normalizeMenuItem);
+      const changed = normalized.some((item, index) => item.img !== prev[index]?.img);
+      return changed ? normalized : prev;
+    });
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
@@ -123,8 +162,8 @@ function App() {
         onCreateOrder={(order) => {
           setOrders(prev => [order, ...prev]);
         }}
-        onAddMenuItem={(item) => setMenuItems(prev => [item, ...prev])}
-        onUpdateMenuItem={(item) => setMenuItems(prev => prev.map(m => m.id === item.id ? item : m))}
+        onAddMenuItem={(item) => setMenuItems(prev => [normalizeMenuItem(item), ...prev])}
+        onUpdateMenuItem={(item) => setMenuItems(prev => prev.map(m => m.id === item.id ? normalizeMenuItem(item) : m))}
         onRemoveMenuItem={(id) => setMenuItems(prev => prev.filter(m => m.id !== id))}
         onClearOrders={() => setOrders([])}
         onResetMenu={() => setMenuItems(defaultMenuItems)}
