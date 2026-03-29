@@ -2,10 +2,6 @@ services:
   mongo:
     image: mongo:7
     container_name: cafe_mongo
-    # NOTE: Port NOT exposed to host in production.
-    # Uncomment below only for local dev/debugging:
-    # ports:
-    #   - "27017:27017"
     volumes:
       - mongo_data:/data/db
     restart: unless-stopped
@@ -28,11 +24,12 @@ services:
       mongo:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/menu"]
+      # Use Python (always available) instead of curl (not in slim image)
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/menu')"]
       interval: 15s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 15s
 
   frontend:
     build:
