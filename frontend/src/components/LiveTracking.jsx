@@ -43,7 +43,14 @@ const STATUS_CONFIG = {
   },
 };
 
-const POLL_INTERVAL = 1000; // 1 second for near-instant updates
+const POLL_INTERVAL = 500; // 500ms for near-instant status updates
+
+// Compute prep time left from approved_at timestamp locally (no server needed)
+function computeSecondsLeft(approvedAt, prepTimeMinutes) {
+  if (!approvedAt) return null;
+  const elapsed = (Date.now() - new Date(approvedAt).getTime()) / 1000;
+  return Math.max(0, Math.round(prepTimeMinutes * 60 - elapsed));
+}
 
 export default function LiveTracking({ orderData }) {
   const isOrdered = !!orderData;
@@ -52,28 +59,52 @@ export default function LiveTracking({ orderData }) {
   const customerName = orderData?.customerName || '';
 
   const [orderStatus, setOrderStatus] = useState(null);
-  const [prepTimeLeft, setPrepTimeLeft] = useState(null);
+  // Local display value for the countdown — updated every second via RAF/interval
+  const [displaySecondsLeft, setDisplaySecondsLeft] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
-  const timerRef = useRef(null);
-  const notifiedRef = useRef(false);
-  const prevStatusRef = useRef(null); // Use ref instead of state to avoid re-render loop
 
-  // ── Show in-page toast notification ─────────────────────────────────
+  const rafRef = useRef(null);
+  const notifiedRef = useRef(false);
+  const prevStatusRef = useRef(null);
+  // Store approved_at + prepTimeMinutes in a ref so the RAF closure never goes stale
+  const timerParamsRef = useRef({ approvedAt: null, prepTimeMinutes: 10 });
+
+  // ── Toast notification ────────────────────────────────────────────────────
   const showToast = useCallback((emoji, message, color) => {
     setToastMessage({ emoji, message, color });
-    // Also try browser notification
     if (window.Notification && Notification.permission === 'granted') {
       new Notification('Cafe 1 Cr', { body: `${emoji} ${message}` });
     }
-    // Auto-dismiss after 6 seconds
     setTimeout(() => setToastMessage(null), 6000);
   }, []);
 
-  // ── Poll order status from API ──────────────────────────────────────
+  // ── Smooth countdown via requestAnimationFrame ────────────────────────────
+  // Runs independently of the poll — never freezes, always in sync with wall clock
+  const startCountdown = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+    const tick = () => {
+      const { approvedAt, prepTimeMinutes } = timerParamsRef.current;
+      if (!approvedAt) return;
+      const left = computeSecondsLeft(approvedAt, prepTimeMinutes);
+      setDisplaySecondsLeft(left);
+      if (left > 0) {
+        // Schedule next tick ~1 second from now using setTimeout inside RAF
+        // This avoids 60fps rerenders while staying smooth
+        setTimeout(() => {
+          rafRef.current = requestAnimationFrame(tick);
+        }, 250); // update 4× per second for smoother display
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+  }, []);
+
+  // ── Poll order status from API every 500ms ────────────────────────────────
   useEffect(() => {
     if (!dbOrderId) {
       setOrderStatus(null);
-      setPrepTimeLeft(null);
+      setDisplaySecondsLeft(null);
       prevStatusRef.current = null;
       notifiedRef.current = false;
       return;
@@ -82,29 +113,40 @@ export default function LiveTracking({ orderData }) {
     const poll = async () => {
       try {
         const res = await fetch(`/api/orders/status/${dbOrderId}`);
-        if (!res.ok) {
-          console.warn(`[LiveTracking] Poll failed: ${res.status} ${res.statusText}`);
-          return;
-        }
+        if (!res.ok) return;
         const data = await res.json();
-        console.log('[LiveTracking] Status:', data.status, '| Prep left:', data.prep_seconds_left);
+
         setOrderStatus(data);
 
-        // Update prep time from server
-        if (data.prep_seconds_left !== null && data.prep_seconds_left !== undefined) {
-          setPrepTimeLeft(data.prep_seconds_left);
-        }
+        // Update timer params ref whenever we get a new approved_at
+        if (data.approved_at) {
+          const changed =
+            timerParamsRef.current.approvedAt !== data.approved_at ||
+            timerParamsRef.current.prepTimeMinutes !== data.prep_time_minutes;
 
-        // Fire notification on status change (using ref to avoid stale closures)
-        const prev = prevStatusRef.current;
-        if (prev && data.status !== prev) {
-          const config = STATUS_CONFIG[data.status];
-          if (config) {
-            showToast(config.emoji, config.label, config.color);
+          timerParamsRef.current = {
+            approvedAt: data.approved_at,
+            prepTimeMinutes: data.prep_time_minutes ?? 10,
+          };
+
+          // Start / restart smooth countdown when approved_at is first received
+          if (changed && data.status !== 'Completed' && data.status !== 'Declined') {
+            startCountdown();
           }
         }
 
-        // Special notification when completed
+        // Stop countdown if order completed or declined
+        if (data.status === 'Completed' || data.status === 'Declined') {
+          if (rafRef.current) cancelAnimationFrame(rafRef.current);
+          if (data.status === 'Completed') setDisplaySecondsLeft(0);
+        }
+
+        // Fire toast on status change
+        const prev = prevStatusRef.current;
+        if (prev && data.status !== prev) {
+          const config = STATUS_CONFIG[data.status];
+          if (config) showToast(config.emoji, config.label, config.color);
+        }
         if (data.status === 'Completed' && !notifiedRef.current) {
           notifiedRef.current = true;
           showToast('🎉', 'Your order is ready for pickup!', '#6A1B9A');
@@ -112,39 +154,22 @@ export default function LiveTracking({ orderData }) {
 
         prevStatusRef.current = data.status;
       } catch (err) {
-        console.error('Failed to poll order status:', err);
+        // Silently ignore network errors during poll
       }
     };
-
-    poll(); // Immediate first poll
-    const interval = setInterval(poll, POLL_INTERVAL);
 
     // Request notification permission
     if (window.Notification && Notification.permission !== 'denied') {
       Notification.requestPermission();
     }
 
-    return () => clearInterval(interval);
-  }, [dbOrderId, showToast]); // No prevStatus dependency — uses ref
-
-  // ── Local countdown timer (ticks every second between polls) ────────
-  useEffect(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-
-    if (prepTimeLeft !== null && prepTimeLeft > 0 && orderStatus?.status !== 'Completed' && orderStatus?.status !== 'Declined') {
-      timerRef.current = setInterval(() => {
-        setPrepTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [prepTimeLeft !== null && orderStatus?.status]);
+    poll(); // Immediate first poll
+    const interval = setInterval(poll, POLL_INTERVAL);
+    return () => {
+      clearInterval(interval);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [dbOrderId, showToast, startCountdown]);
 
   const formatTime = (seconds) => {
     if (seconds === null || seconds === undefined) return '--:--';
@@ -155,15 +180,15 @@ export default function LiveTracking({ orderData }) {
 
   const currentStatus = orderStatus?.status || 'Received';
   const config = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.Received;
-  const hasTimer = orderStatus?.approved_at && currentStatus !== 'Completed' && currentStatus !== 'Declined';
+  const hasTimer = !!orderStatus?.approved_at && currentStatus !== 'Completed' && currentStatus !== 'Declined';
   const isCompleted = currentStatus === 'Completed';
   const isDeclined = currentStatus === 'Declined';
 
-  // Progress based on status
+  // Progress computed from local countdown (smooth, no jumps)
   let progress = config.progress;
-  if (hasTimer && prepTimeLeft !== null && orderStatus?.prep_time_minutes) {
+  if (hasTimer && displaySecondsLeft !== null && orderStatus?.prep_time_minutes) {
     const totalSecs = orderStatus.prep_time_minutes * 60;
-    const elapsed = totalSecs - prepTimeLeft;
+    const elapsed = totalSecs - displaySecondsLeft;
     progress = Math.min(95, 30 + (elapsed / totalSecs) * 65);
   }
   if (isCompleted) progress = 100;
@@ -178,7 +203,7 @@ export default function LiveTracking({ orderData }) {
         {isOrdered ? `Order ${displayId}${customerName ? ` for ${customerName}` : ''}. Sit tight!` : 'Live updates so your brew is perfectly timed for pickup.'}
       </p>
 
-      {/* ── In-page Toast Notification ──────────────────────────────── */}
+      {/* ── Toast Notification ──────────────────────────────────────────────── */}
       {toastMessage && (
         <div style={{
           position: 'fixed',
@@ -204,7 +229,7 @@ export default function LiveTracking({ orderData }) {
           {toastMessage.message}
         </div>
       )}
-      
+
       <div className="tracking-grid">
         <div>
           <div className="tracking-card reveal">
@@ -238,8 +263,7 @@ export default function LiveTracking({ orderData }) {
               <div style={{ display: 'flex', gap: '4px', margin: '20px 0', alignItems: 'center' }}>
                 {['Received', 'Approved', 'Preparing', 'Completed'].map((step, idx) => {
                   const stepIdx = ['Received', 'Approved', 'Preparing', 'Completed'].indexOf(currentStatus);
-                  const thisIdx = idx;
-                  const isActive = thisIdx <= stepIdx && !isDeclined;
+                  const isActive = idx <= stepIdx && !isDeclined;
                   const stepConfig = STATUS_CONFIG[step];
                   return (
                     <React.Fragment key={step}>
@@ -289,7 +313,7 @@ export default function LiveTracking({ orderData }) {
               </div>
             </div>
 
-            {/* Timer — only shows after approval */}
+            {/* Timer */}
             <div style={{ marginTop: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px' }}>
                 <span style={{ color: 'var(--text-muted)' }}>
@@ -305,14 +329,14 @@ export default function LiveTracking({ orderData }) {
                 </span>
                 <strong style={{ color: 'var(--brown)', fontVariantNumeric: 'tabular-nums' }}>
                   {isOrdered
-                    ? (hasTimer ? `${formatTime(prepTimeLeft)} min` : isCompleted ? '✓ Done' : isDeclined ? '—' : 'Pending...')
+                    ? (hasTimer ? `${formatTime(displaySecondsLeft)} min` : isCompleted ? '✓ Done' : isDeclined ? '—' : 'Pending...')
                     : '10:00 min'}
                 </strong>
               </div>
               <div className="progress-bar">
                 <div className="progress-fill" style={{
                   width: isOrdered ? `${progress}%` : '50%',
-                  transition: 'width 1s ease-in-out',
+                  transition: 'width 0.25s ease-in-out',
                   background: isOrdered ? config.color : undefined,
                 }}></div>
               </div>
@@ -320,16 +344,16 @@ export default function LiveTracking({ orderData }) {
           </div>
         </div>
         <div className="prep-visual reveal">
-          <img 
-            src="https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=800&q=80" 
-            alt="Coffee Preparation" 
-            style={{ borderRadius: '24px', width: '100%', height: '340px', objectFit: 'cover', boxShadow: 'var(--shadow-card)' }} 
+          <img
+            src="https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=800&q=80"
+            alt="Coffee Preparation"
+            style={{ borderRadius: '24px', width: '100%', height: '340px', objectFit: 'cover', boxShadow: 'var(--shadow-card)' }}
           />
           <div className="prep-overlay">
             <div>
               <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {isOrdered
-                  ? (hasTimer ? `${formatTime(prepTimeLeft)} min left` : isCompleted ? 'Ready! 🎉' : config.label)
+                  ? (hasTimer ? `${formatTime(displaySecondsLeft)} min left` : isCompleted ? 'Ready! 🎉' : config.label)
                   : '10:00 min left'}
               </strong><br />
               <span>{isOrdered ? config.description : 'Waiting for order...'}</span>

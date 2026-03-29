@@ -14,54 +14,40 @@ import AdminDashboard from './components/AdminDashboard';
 import { menuItems as defaultMenuItems } from './data/menuData';
 
 const MENU_STORAGE_KEY = 'cafe1cr_menu';
-
-const normalizeLocalImgPath = (img) => {
-  if (!img || typeof img !== 'string' || !img.startsWith('/img/')) {
-    return img;
-  }
-
-  const raw = img.slice('/img/'.length);
-  const [namePart, query] = raw.split('?');
-  const cleaned = namePart
-    .replace(/%20/gi, ' ')
-    .toLowerCase()
-    .replace(/[^a-z0-9.]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-
-  const hasExt = /\.[a-z0-9]+$/.test(cleaned);
-  const fileName = hasExt ? cleaned : `${cleaned}.jpg`;
-  return `/img/${fileName}${query ? `?${query}` : ''}`;
-};
-
-const normalizeMenuItem = (item) => ({
-  ...item,
-  img: normalizeLocalImgPath(item?.img)
-});
+const ORDERS_STORAGE_KEY = 'cafe1cr_orders';
 
 function App() {
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [orderPlaced, setOrderPlaced] = useState(() => {
-    // Restore active order from sessionStorage so it survives refresh
-    try {
-      const saved = sessionStorage.getItem('cafe1cr_active_order');
-      return saved ? JSON.parse(saved) : null;
-    } catch { return null; }
-  });
+  const [orderPlaced, setOrderPlaced] = useState(null);
   const [menuItems, setMenuItems] = useState(() => {
     const stored = localStorage.getItem(MENU_STORAGE_KEY);
-    if (!stored) return defaultMenuItems;
-
-    try {
-      const parsed = JSON.parse(stored);
-      return Array.isArray(parsed) ? parsed.map(normalizeMenuItem) : defaultMenuItems;
-    } catch {
-      return defaultMenuItems;
-    }
+    return stored ? JSON.parse(stored) : defaultMenuItems;
+  });
+  const [orders, setOrders] = useState(() => {
+    const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
   });
   const [isAdmin, setIsAdmin] = useState(window.location.hash === '#admin');
   const [toast, setToast] = useState(null);
+  const [dbOrders, setDbOrders] = useState([]);
+
+  // Fetch all orders from API for admin view (polls every 3s)
+  useEffect(() => {
+    if (!isAdmin) return;
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch('/api/admin/orders');
+        if (res.ok) {
+          const data = await res.json();
+          setDbOrders(data.orders || []);
+        }
+      } catch {}
+    };
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 3000);
+    return () => clearInterval(interval);
+  }, [isAdmin]);
 
   const categories = useMemo(() => {
     const set = new Set(menuItems.map(item => item.category).filter(Boolean));
@@ -79,12 +65,8 @@ function App() {
   }, [menuItems]);
 
   useEffect(() => {
-    setMenuItems(prev => {
-      const normalized = prev.map(normalizeMenuItem);
-      const changed = normalized.some((item, index) => item.img !== prev[index]?.img);
-      return changed ? normalized : prev;
-    });
-  }, []);
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+  }, [orders]);
 
   // Reveal animation logic
   useEffect(() => {
@@ -123,20 +105,21 @@ function App() {
 
   const handleOrderCompletion = (orderInfo = {}) => {
     const orderId = orderInfo.orderId || "ORD-12345";
-    const dbOrderId = orderInfo.db_order_id || null;
-    const displayId = orderInfo.order_display_id || orderId;
-    const customerName = orderInfo.customerName || '';
+    const items = orderInfo.items || cart;
+    const total = orderInfo.total || items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const paymentMethod = orderInfo.paymentMethod || 'unknown';
 
-    const orderData = {
-      message: "Order placed successfully!",
-      order_id: displayId,
-      db_order_id: dbOrderId,
-      order_display_id: displayId,
-      customerName,
+    const order = {
+      id: orderId,
+      status: 'pending',
+      items,
+      total,
+      payment: paymentMethod,
+      createdAt: new Date().toISOString()
     };
-    setOrderPlaced(orderData);
-    // Persist to sessionStorage so order survives page refresh
-    try { sessionStorage.setItem('cafe1cr_active_order', JSON.stringify(orderData)); } catch {}
+
+    setOrders(prev => [order, ...prev]);
+    setOrderPlaced({ message: "Order placed successfully!", order_id: orderId });
     setCart([]);
     setIsCartOpen(false);
     
@@ -150,10 +133,30 @@ function App() {
   if (isAdmin) {
     return (
       <AdminDashboard
+        orders={dbOrders.length > 0 ? dbOrders : orders}
         menuItems={menuItems}
-        onAddMenuItem={(item) => setMenuItems(prev => [normalizeMenuItem(item), ...prev])}
-        onUpdateMenuItem={(item) => setMenuItems(prev => prev.map(m => m.id === item.id ? normalizeMenuItem(item) : m))}
+        onUpdateOrderStatus={async (id, status) => {
+          // Optimistic local update
+          setOrders(prev => prev.map(order => order.id === id ? { ...order, status } : order));
+          setDbOrders(prev => prev.map(order => order.id === id ? { ...order, status } : order));
+          // Persist to DB so LiveTracking picks it up instantly
+          try {
+            await fetch(`/api/orders/${id}/status`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status, prep_time_minutes: 10 }),
+            });
+          } catch (e) {
+            console.error('Failed to update order status:', e);
+          }
+        }}
+        onCreateOrder={(order) => {
+          setOrders(prev => [order, ...prev]);
+        }}
+        onAddMenuItem={(item) => setMenuItems(prev => [item, ...prev])}
+        onUpdateMenuItem={(item) => setMenuItems(prev => prev.map(m => m.id === item.id ? item : m))}
         onRemoveMenuItem={(id) => setMenuItems(prev => prev.filter(m => m.id !== id))}
+        onClearOrders={() => setOrders([])}
         onResetMenu={() => setMenuItems(defaultMenuItems)}
         onExit={() => { window.location.hash = ''; }}
       />
