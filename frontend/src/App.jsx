@@ -30,6 +30,24 @@ function App() {
   });
   const [isAdmin, setIsAdmin] = useState(window.location.hash === '#admin');
   const [toast, setToast] = useState(null);
+  const [dbOrders, setDbOrders] = useState([]);
+
+  // Fetch all orders from API for admin view (polls every 3s)
+  useEffect(() => {
+    if (!isAdmin) return;
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch('/api/admin/orders');
+        if (res.ok) {
+          const data = await res.json();
+          setDbOrders(data.orders || []);
+        }
+      } catch {}
+    };
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 3000);
+    return () => clearInterval(interval);
+  }, [isAdmin]);
 
   const categories = useMemo(() => {
     const set = new Set(menuItems.map(item => item.category).filter(Boolean));
@@ -115,10 +133,22 @@ function App() {
   if (isAdmin) {
     return (
       <AdminDashboard
-        orders={orders}
+        orders={dbOrders.length > 0 ? dbOrders : orders}
         menuItems={menuItems}
-        onUpdateOrderStatus={(id, status) => {
+        onUpdateOrderStatus={async (id, status) => {
+          // Optimistic local update
           setOrders(prev => prev.map(order => order.id === id ? { ...order, status } : order));
+          setDbOrders(prev => prev.map(order => order.id === id ? { ...order, status } : order));
+          // Persist to DB so LiveTracking picks it up instantly
+          try {
+            await fetch(`/api/orders/${id}/status`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status, prep_time_minutes: 10 }),
+            });
+          } catch (e) {
+            console.error('Failed to update order status:', e);
+          }
         }}
         onCreateOrder={(order) => {
           setOrders(prev => [order, ...prev]);

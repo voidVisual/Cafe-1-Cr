@@ -1,11 +1,12 @@
 from fastapi import FastAPI, HTTPException, Depends # type: ignore
 from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from pydantic import BaseModel # type: ignore
-from typing import List
+from typing import List, Optional
 import uuid
 import os
 from datetime import datetime, timezone, timedelta
 from pymongo import MongoClient # type: ignore
+from bson import ObjectId # type: ignore
 
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
 mongo_client = MongoClient(MONGODB_URI)
@@ -198,6 +199,89 @@ def get_today_revenue(orders=Depends(get_orders_collection)):
         "total_revenue": total_rev,
         "order_count": len(today_orders)
     }
+
+# ── Real-time order status (polled by LiveTracking every 500ms) ──────────────
+@app.get("/api/orders/status/{order_id}")
+def get_order_status(order_id: str, orders=Depends(get_orders_collection)):
+    try:
+        order = orders.find_one({"_id": ObjectId(order_id)})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid order ID")
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    status = order.get("status", "Received")
+    approved_at = order.get("approved_at")
+    prep_time_minutes = order.get("prep_time_minutes", 10)
+
+    # Compute remaining prep seconds server-side for initial sync
+    prep_seconds_left = None
+    if approved_at and status not in ["Completed", "Declined"]:
+        elapsed = (datetime.now(timezone.utc) - approved_at).total_seconds()
+        prep_seconds_left = max(0, int(prep_time_minutes * 60 - elapsed))
+
+    return {
+        "order_id": order_id,
+        "status": status,
+        "approved_at": approved_at.isoformat() if approved_at else None,
+        "prep_time_minutes": prep_time_minutes,
+        "prep_seconds_left": prep_seconds_left,
+    }
+
+
+class StatusUpdate(BaseModel):
+    status: str
+    prep_time_minutes: Optional[int] = 10
+
+
+# ── Admin: update order status ────────────────────────────────────────────────
+@app.patch("/api/orders/{order_id}/status")
+def update_order_status(
+    order_id: str,
+    update: StatusUpdate,
+    orders=Depends(get_orders_collection)
+):
+    try:
+        oid = ObjectId(order_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid order ID")
+
+    changes: dict = {"status": update.status}
+    if update.status == "Approved":
+        changes["approved_at"] = datetime.now(timezone.utc)
+        changes["prep_time_minutes"] = update.prep_time_minutes
+
+    result = orders.update_one({"_id": oid}, {"$set": changes})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    print(f"[Admin] Order {order_id} → {update.status}")
+    return {"success": True, "order_id": order_id, "status": update.status}
+
+
+# ── Admin: get all orders ─────────────────────────────────────────────────────
+@app.get("/api/admin/orders")
+def get_all_orders(orders=Depends(get_orders_collection)):
+    cursor = orders.find().sort("created_at", -1).limit(200)
+    result = []
+    for o in cursor:
+        result.append({
+            "id": str(o.get("_id")),
+            "order_display_id": o.get("order_display_id") or ("ORD-" + str(o["_id"])[-6:].upper()),
+            "total_amount": o.get("total_amount"),
+            "status": o.get("status"),
+            "payment_method": o.get("payment_method"),
+            "customer_name": o.get("customer_name", ""),
+            "customer_phone": o.get("customer_phone", ""),
+            "customer_address": o.get("customer_address", ""),
+            "created_at": o.get("created_at").isoformat() if o.get("created_at") else None,
+            "items": [
+                {"name": i.get("name"), "qty": i.get("qty"), "price": i.get("price")}
+                for i in o.get("items", [])
+            ],
+        })
+    return {"orders": result}
+
 
 if __name__ == "__main__":
     import uvicorn # type: ignore
