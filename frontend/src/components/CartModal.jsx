@@ -5,6 +5,7 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [isProcessing, setIsProcessing] = useState(false);
   const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
   
@@ -19,10 +20,20 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
   };
 
   const handleNameSubmit = () => {
-    if (!customerName.trim()) {
-      alert('Please enter your name to continue.');
+    if (!customerName.trim() || !customerPhone.trim()) {
+      alert('Please enter your name and contact number to continue.');
       return;
     }
+
+    // Strip out any non-digit characters (spaces, dashes, etc)
+    const strippedPhone = customerPhone.replace(/\D/g, '');
+    
+    // Validate that it's exactly 10 digits (Standard Indian format)
+    if (!/^[0-9]{10}$/.test(strippedPhone)) {
+      alert('Please enter a valid 10-digit contact number.');
+      return;
+    }
+
     setStep('payment');
   };
 
@@ -38,7 +49,7 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
             items: cart.map(i => ({ id: i.id, qty: i.qty, name: i.name, price: i.price })),
             total,
             address: 'Pickup at Counter',
-            phone: '+91 9999999999',
+            phone: customerPhone.trim(),
             customer_name: customerName.trim()
           })
         });
@@ -78,7 +89,7 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
           items: cart,
           total: total,
           address: 'Default Local Address, Pune',
-          phone: '+91 9999999999',
+          phone: customerPhone.trim(),
           customer_name: customerName.trim()
         })
       });
@@ -113,7 +124,7 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 order_id: orderData.order_id,
-                orderData: { items: cart, total: total, address: 'Pune', phone: '9999999999', customer_name: customerName.trim() }
+                orderData: { items: cart, total: total, address: 'Pune', phone: customerPhone.trim(), customer_name: customerName.trim() }
               })
             });
             const verifyData = await verifyRes.json();
@@ -209,10 +220,10 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
             </div>
           ) : step === 'name' ? (
             <div className="modal-body">
-              <div className="modal-name">👤 Your Name</div>
-              <div className="modal-sub">Enter your name so we can assign this order to you</div>
+              <div className="modal-name">👤 Details</div>
+              <div className="modal-sub">Enter your details so we can assign this order to you</div>
               
-              <div style={{ marginTop: '32px' }}>
+              <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ position: 'relative' }}>
                   <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.2rem' }}>👤</span>
                   <input
@@ -221,6 +232,34 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="Enter your name"
                     autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        document.getElementById('phone-input')?.focus();
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '16px 16px 16px 44px',
+                      borderRadius: '12px',
+                      border: '2px solid var(--border)',
+                      fontSize: '1.1rem',
+                      outline: 'none',
+                      transition: 'border-color 0.3s ease',
+                      boxSizing: 'border-box',
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = 'var(--brown)'}
+                    onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+                  />
+                </div>
+
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.2rem' }}>📞</span>
+                  <input
+                    id="phone-input"
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="Enter your contact number"
                     onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
                     style={{
                       width: '100%',
@@ -236,8 +275,9 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
                     onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
                   />
                 </div>
+                
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-                  This name will appear on your order for easy identification.
+                  This information will appear on your order for easy identification.
                 </p>
               </div>
 
