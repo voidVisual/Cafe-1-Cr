@@ -14,7 +14,6 @@ import AdminDashboard from './components/AdminDashboard';
 import { menuItems as defaultMenuItems } from './data/menuData';
 
 const MENU_STORAGE_KEY = 'cafe1cr_menu';
-const ORDERS_STORAGE_KEY = 'cafe1cr_orders';
 
 const normalizeLocalImgPath = (img) => {
   if (!img || typeof img !== 'string' || !img.startsWith('/img/')) {
@@ -43,7 +42,13 @@ const normalizeMenuItem = (item) => ({
 function App() {
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [orderPlaced, setOrderPlaced] = useState(null);
+  const [orderPlaced, setOrderPlaced] = useState(() => {
+    // Restore active order from sessionStorage so it survives refresh
+    try {
+      const saved = sessionStorage.getItem('cafe1cr_active_order');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
   const [menuItems, setMenuItems] = useState(() => {
     const stored = localStorage.getItem(MENU_STORAGE_KEY);
     if (!stored) return defaultMenuItems;
@@ -54,10 +59,6 @@ function App() {
     } catch {
       return defaultMenuItems;
     }
-  });
-  const [orders, setOrders] = useState(() => {
-    const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
   });
   const [isAdmin, setIsAdmin] = useState(window.location.hash === '#admin');
   const [toast, setToast] = useState(null);
@@ -84,10 +85,6 @@ function App() {
       return changed ? normalized : prev;
     });
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
-  }, [orders]);
 
   // Reveal animation logic
   useEffect(() => {
@@ -126,21 +123,20 @@ function App() {
 
   const handleOrderCompletion = (orderInfo = {}) => {
     const orderId = orderInfo.orderId || "ORD-12345";
-    const items = orderInfo.items || cart;
-    const total = orderInfo.total || items.reduce((sum, item) => sum + (item.price * item.qty), 0);
-    const paymentMethod = orderInfo.paymentMethod || 'unknown';
+    const dbOrderId = orderInfo.db_order_id || null;
+    const displayId = orderInfo.order_display_id || orderId;
+    const customerName = orderInfo.customerName || '';
 
-    const order = {
-      id: orderId,
-      status: 'pending',
-      items,
-      total,
-      payment: paymentMethod,
-      createdAt: new Date().toISOString()
+    const orderData = {
+      message: "Order placed successfully!",
+      order_id: displayId,
+      db_order_id: dbOrderId,
+      order_display_id: displayId,
+      customerName,
     };
-
-    setOrders(prev => [order, ...prev]);
-    setOrderPlaced({ message: "Order placed successfully!", order_id: orderId });
+    setOrderPlaced(orderData);
+    // Persist to sessionStorage so order survives page refresh
+    try { sessionStorage.setItem('cafe1cr_active_order', JSON.stringify(orderData)); } catch {}
     setCart([]);
     setIsCartOpen(false);
     
@@ -154,18 +150,10 @@ function App() {
   if (isAdmin) {
     return (
       <AdminDashboard
-        orders={orders}
         menuItems={menuItems}
-        onUpdateOrderStatus={(id, status) => {
-          setOrders(prev => prev.map(order => order.id === id ? { ...order, status } : order));
-        }}
-        onCreateOrder={(order) => {
-          setOrders(prev => [order, ...prev]);
-        }}
         onAddMenuItem={(item) => setMenuItems(prev => [normalizeMenuItem(item), ...prev])}
         onUpdateMenuItem={(item) => setMenuItems(prev => prev.map(m => m.id === item.id ? normalizeMenuItem(item) : m))}
         onRemoveMenuItem={(id) => setMenuItems(prev => prev.filter(m => m.id !== id))}
-        onClearOrders={() => setOrders([])}
         onResetMenu={() => setMenuItems(defaultMenuItems)}
         onExit={() => { window.location.hash = ''; }}
       />

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 const emptyItem = {
   name: '',
@@ -11,17 +11,14 @@ const emptyItem = {
 };
 
 const ADMIN_AUTH_KEY = 'cafe1cr_admin_authed';
+const POLL_INTERVAL = 1000; // 1 second for near-instant updates
 
 export default function AdminDashboard({
-  orders,
   menuItems,
-  onUpdateOrderStatus,
   onAddMenuItem,
   onUpdateMenuItem,
   onRemoveMenuItem,
-  onClearOrders,
   onResetMenu,
-  onCreateOrder,
   onExit
 }) {
   const [isAuthed, setIsAuthed] = useState(() => sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true');
@@ -39,6 +36,89 @@ export default function AdminDashboard({
   const [posSelectedId, setPosSelectedId] = useState('');
   const [posQty, setPosQty] = useState(1);
 
+  // API-driven orders
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const prevPendingCount = useRef(0);
+  const audioRef = useRef(null);
+
+  // Local overrides: { orderId: { order, expiresAt } }
+  // These take precedence over polled data for 10 seconds after a status change
+  const localOverrides = useRef({});
+
+  // Merge polled orders with local overrides
+  const mergeWithOverrides = (polledOrders) => {
+    const now = Date.now();
+    // Clean expired overrides
+    for (const id of Object.keys(localOverrides.current)) {
+      if (localOverrides.current[id].expiresAt < now) {
+        delete localOverrides.current[id];
+      }
+    }
+    // Merge: local override wins if it exists and hasn't expired
+    return polledOrders.map(order => {
+      const override = localOverrides.current[order.id];
+      if (override && override.expiresAt > now) {
+        return { ...order, ...override.order };
+      }
+      return order;
+    });
+  };
+
+  // ── Fetch orders from API with polling ──────────────────────────────
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch('/api/admin/orders');
+      const data = await res.json();
+      if (data.orders) {
+        // Merge with local overrides so recent status changes aren't reverted
+        setOrders(mergeWithOverrides(data.orders));
+
+        // Play sound if new pending orders appeared
+        const newPending = data.orders.filter(o => o.status === 'Received').length;
+        if (newPending > prevPendingCount.current && prevPendingCount.current !== 0) {
+          try { audioRef.current?.play(); } catch (_) { /* ignore */ }
+        }
+        prevPendingCount.current = newPending;
+      }
+    } catch (err) {
+      console.error('Failed to fetch orders:', err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAuthed) return;
+    fetchOrders();
+    const interval = setInterval(fetchOrders, POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [isAuthed]);
+
+  // ── Update order status via API ─────────────────────────────────────
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Store local override so polling can't revert this for 10 seconds
+        localOverrides.current[orderId] = {
+          order: data.order,
+          expiresAt: Date.now() + 10000, // 10 second protection window
+        };
+        // Immediate local update
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...data.order } : o));
+      }
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      alert('Failed to update order status. Please try again.');
+    }
+  };
+
   const categories = useMemo(() => {
     const set = new Set(menuItems.map(item => item.category).filter(Boolean));
     return Array.from(set).sort();
@@ -46,14 +126,16 @@ export default function AdminDashboard({
 
   const stats = useMemo(() => {
     const totalOrders = orders.length;
-    const pending = orders.filter(order => order.status === 'pending').length;
-    const approved = orders.filter(order => order.status === 'approved').length;
-    const declined = orders.filter(order => order.status === 'declined').length;
+    const received = orders.filter(order => order.status === 'Received').length;
+    const approved = orders.filter(order => order.status === 'Approved').length;
+    const preparing = orders.filter(order => order.status === 'Preparing').length;
+    const completed = orders.filter(order => order.status === 'Completed').length;
+    const declined = orders.filter(order => order.status === 'Declined').length;
     const revenue = orders
-      .filter(order => order.status === 'approved')
-      .reduce((sum, order) => sum + (order.total || 0), 0);
+      .filter(order => order.status === 'Completed')
+      .reduce((sum, order) => sum + (order.total_amount || 0), 0);
 
-    return { totalOrders, pending, approved, declined, revenue };
+    return { totalOrders, received, approved, preparing, completed, declined, revenue };
   }, [orders]);
 
   useEffect(() => {
@@ -70,7 +152,7 @@ export default function AdminDashboard({
         return false;
       }
 
-      const orderDate = order.createdAt ? new Date(order.createdAt) : null;
+      const orderDate = order.created_at ? new Date(order.created_at) : null;
       if (startDate && orderDate && orderDate < startDate) {
         return false;
       }
@@ -82,23 +164,25 @@ export default function AdminDashboard({
         return true;
       }
 
-      const matchesId = String(order.id || '').toLowerCase().includes(search);
+      const matchesId = String(order.id || '').toLowerCase().includes(search) || String(order.order_display_id || '').toLowerCase().includes(search);
       const matchesItem = order.items?.some(item => String(item.name || '').toLowerCase().includes(search));
-      return matchesId || matchesItem;
+      const matchesPhone = String(order.customer_phone || '').includes(search);
+      const matchesName = String(order.customer_name || '').toLowerCase().includes(search);
+      return matchesId || matchesItem || matchesPhone || matchesName;
     });
 
     const sorted = [...filtered];
     if (sortBy === 'oldest') {
-      sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     }
     if (sortBy === 'newest') {
-      sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
     if (sortBy === 'total-high') {
-      sorted.sort((a, b) => (b.total || 0) - (a.total || 0));
+      sorted.sort((a, b) => (b.total_amount || 0) - (a.total_amount || 0));
     }
     if (sortBy === 'total-low') {
-      sorted.sort((a, b) => (a.total || 0) - (b.total || 0));
+      sorted.sort((a, b) => (a.total_amount || 0) - (b.total_amount || 0));
     }
 
     return sorted;
@@ -149,7 +233,7 @@ export default function AdminDashboard({
       return;
     }
 
-    const headers = ['order_id', 'status', 'total', 'payment', 'created_at', 'items'];
+    const headers = ['order_id', 'status', 'total', 'payment', 'phone', 'created_at', 'items'];
     const rows = list.map(order => {
       const items = (order.items || [])
         .map(item => `${item.name} x${item.qty}`)
@@ -157,9 +241,10 @@ export default function AdminDashboard({
       const values = [
         order.id,
         order.status,
-        order.total,
-        order.payment,
-        order.createdAt,
+        order.total_amount,
+        order.payment_method,
+        order.customer_phone,
+        order.created_at,
         items
       ].map(value => `"${String(value ?? '').replace(/"/g, '""')}"`);
       return values.join(',');
@@ -206,20 +291,44 @@ export default function AdminDashboard({
     setPosSelectedId('');
   };
 
-  const handlePosSubmit = () => {
+  const handlePosSubmit = async () => {
     if(posCart.length === 0) { alert('Order is empty.'); return; }
     const total = posCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-    const newOrder = {
-      id: `POS-${Date.now()}`,
-      status: 'approved',
-      items: posCart,
-      total,
-      payment: 'cash',
-      createdAt: new Date().toISOString()
+    try {
+      const res = await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: posCart.map(i => ({ id: i.id, qty: i.qty, name: i.name, price: i.price })),
+          total,
+          address: 'Counter Order',
+          phone: 'POS'
+        })
+      });
+      const data = await res.json();
+      if (data.db_order_id) {
+        // Auto-approve POS orders
+        await handleStatusChange(data.db_order_id, 'Approved');
+        setPosCart([]);
+        alert('Counter order placed and approved!');
+        fetchOrders();
+      }
+    } catch (err) {
+      console.error('POS order failed:', err);
+      alert('Failed to place counter order.');
+    }
+  };
+
+  // ── Status badge helper ─────────────────────────────────────────────
+  const getStatusStyle = (status) => {
+    const styles = {
+      Received: { background: '#FFF3E0', color: '#E65100', border: '1px solid #FFB74D' },
+      Approved: { background: '#E8F5E9', color: '#2E7D32', border: '1px solid #81C784' },
+      Preparing: { background: '#E3F2FD', color: '#1565C0', border: '1px solid #64B5F6' },
+      Completed: { background: '#F3E5F5', color: '#6A1B9A', border: '1px solid #BA68C8' },
+      Declined: { background: '#FFEBEE', color: '#C62828', border: '1px solid #EF9A9A' },
     };
-    onCreateOrder?.(newOrder);
-    setPosCart([]);
-    alert('Counter order placed securely!');
+    return styles[status] || {};
   };
 
   if (!isAuthed) {
@@ -277,6 +386,9 @@ export default function AdminDashboard({
 
   return (
     <div className="admin-shell">
+      {/* Hidden audio for new order notification */}
+      <audio ref={audioRef} preload="auto" src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1iZGtvcHlzbnJyd3h3cXZ7f4CBf3p7foCBgX9/f4CBgYGBgIB/f3+AgYGBgYGAgH5+fn+AgYGCgoGA" />
+
       <section className="admin-hero">
         <div className="admin-hero-bg"></div>
         <div className="admin-hero-overlay"></div>
@@ -287,7 +399,7 @@ export default function AdminDashboard({
             <p className="admin-hero-sub">Review orders, approve or decline, and manage menu pricing without leaving the dashboard.</p>
             <div className="admin-hero-actions">
               <button className="btn-hero-primary" onClick={() => document.getElementById('admin-orders')?.scrollIntoView({ behavior: 'smooth' })}>
-                Review Orders
+                Review Orders {stats.received > 0 && <span style={{ background: '#FF5722', color: 'white', borderRadius: '50%', padding: '2px 8px', marginLeft: '8px', fontSize: '0.8rem', animation: 'pulse 1.5s infinite' }}>⚡ {stats.received}</span>}
               </button>
               <button className="btn-hero-outline" onClick={() => document.getElementById('admin-menu')?.scrollIntoView({ behavior: 'smooth' })}>
                 Edit Menu
@@ -300,12 +412,16 @@ export default function AdminDashboard({
               <strong>{stats.totalOrders}</strong>
             </div>
             <div className="admin-hero-stat">
-              <span>Pending</span>
-              <strong>{stats.pending}</strong>
+              <span>New</span>
+              <strong style={{ color: stats.received > 0 ? '#FF5722' : undefined }}>{stats.received}</strong>
             </div>
             <div className="admin-hero-stat">
-              <span>Approved</span>
-              <strong>{stats.approved}</strong>
+              <span>In Progress</span>
+              <strong>{stats.approved + stats.preparing}</strong>
+            </div>
+            <div className="admin-hero-stat">
+              <span>Completed</span>
+              <strong>{stats.completed}</strong>
             </div>
             <div className="admin-hero-stat">
               <span>Revenue</span>
@@ -375,21 +491,22 @@ export default function AdminDashboard({
           </div>
 
           <div className="admin-card" id="admin-orders">
-          <h3>Orders History</h3>
+          <h3>Orders {loadingOrders && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Loading...</span>}</h3>
           <div className="admin-filter-bar">
             <div className="admin-filter-group">
               <input
                 className="admin-input"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search order ID or item name"
+                placeholder="Search order ID, item, or phone"
               />
               <select className="admin-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                 <option value="all">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="completed">Completed</option>
-                <option value="declined">Declined</option>
+                <option value="Received">Received (New)</option>
+                <option value="Approved">Approved</option>
+                <option value="Preparing">Preparing</option>
+                <option value="Completed">Completed</option>
+                <option value="Declined">Declined</option>
               </select>
             </div>
             <div className="admin-filter-group">
@@ -409,67 +526,78 @@ export default function AdminDashboard({
           </div>
           <div className="admin-muted admin-count">Showing {filteredOrders.length} of {orders.length} orders</div>
           <div className="admin-list">
-            {orders.length === 0 && (
+            {orders.length === 0 && !loadingOrders && (
               <div className="admin-empty">No orders yet.</div>
             )}
             {orders.length > 0 && filteredOrders.length === 0 && (
               <div className="admin-empty">No orders match the filters.</div>
             )}
             {filteredOrders.map(order => (
-              <div key={order.id} className="admin-order">
+              <div key={order.id} className={`admin-order ${order.status === 'Received' ? 'new-order-highlight' : ''}`}>
                 <div className="admin-order-top">
                   <div>
-                    <strong>Order {order.id}</strong>
-                    <div className="admin-muted">{new Date(order.createdAt).toLocaleString()}</div>
+                    <strong>{order.order_display_id || `#${order.id.slice(-6)}`}</strong>
+                    {order.customer_name && <div style={{ color: 'var(--brown-light)', fontWeight: '600', fontSize: '0.9rem' }}>👤 {order.customer_name}</div>}
+                    <div className="admin-muted">{new Date(order.created_at).toLocaleString()}</div>
+
                   </div>
-                  <span className={`admin-status status-${order.status}`}>{order.status}</span>
+                  <span className="admin-status" style={{ ...getStatusStyle(order.status), padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {order.status}
+                  </span>
                 </div>
-                <div className="admin-muted">Payment: {order.payment || 'unknown'} · Total: ₹ {order.total}</div>
+                <div className="admin-muted">Payment: {order.payment_method || 'unknown'} · Total: ₹ {order.total_amount}</div>
                 <ul className="admin-items">
-                  {order.items.map(item => (
-                    <li key={`${order.id}-${item.id}`}>
+                  {order.items.map((item, idx) => (
+                    <li key={`${order.id}-${idx}`}>
                       <span>{item.name}</span>
                       <span>x{item.qty}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="admin-actions">
-                  <button 
-                    className={order.status === 'approved' ? 'btn-outline' : 'btn-primary'} 
-                    onClick={() => onUpdateOrderStatus(order.id, 'approved')}
-                    disabled={order.status === 'completed'}
-                    style={order.status === 'completed' ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                  >
-                    Approve
-                  </button>
-                  <button 
-                    className={order.status === 'completed' ? 'btn-outline' : 'btn-primary'} 
-                    style={
-                      order.status === 'completed' ? { borderColor: '#42A5F5', color: '#42A5F5', opacity: 0.5, cursor: 'not-allowed' } :
-                      order.status === 'approved' ? { background: '#1565C0', color: 'white', border: 'none' } :
-                      { background: '#1565C0', color: 'white', border: 'none', opacity: 0.4, cursor: 'not-allowed' }
-                    }
-                    onClick={() => onUpdateOrderStatus(order.id, 'completed')}
-                    disabled={order.status !== 'approved'}
-                  >
-                    Complete
-                  </button>
-                  <button 
-                    className="btn-outline" 
-                    onClick={() => onUpdateOrderStatus(order.id, 'declined')}
-                    disabled={order.status === 'completed'}
-                    style={order.status === 'completed' ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                  >
-                    Decline
-                  </button>
-                  <button 
-                    className="btn-outline" 
-                    onClick={() => onUpdateOrderStatus(order.id, 'pending')}
-                    disabled={order.status === 'completed'}
-                    style={order.status === 'completed' ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                  >
-                    Pending
-                  </button>
+                <div className="admin-actions" style={{ flexWrap: 'wrap' }}>
+                  {/* Linear workflow: Received → Approved → Preparing → Completed */}
+                  {order.status === 'Received' && (
+                    <>
+                      <button
+                        className="btn-primary"
+                        onClick={() => handleStatusChange(order.id, 'Approved')}
+                        style={{ background: '#2E7D32' }}
+                      >
+                        ✓ Approve
+                      </button>
+                      <button
+                        className="btn-outline"
+                        onClick={() => handleStatusChange(order.id, 'Declined')}
+                        style={{ borderColor: '#C62828', color: '#C62828' }}
+                      >
+                        ✕ Decline
+                      </button>
+                    </>
+                  )}
+                  {order.status === 'Approved' && (
+                    <button
+                      className="btn-primary"
+                      onClick={() => handleStatusChange(order.id, 'Preparing')}
+                      style={{ background: '#1565C0' }}
+                    >
+                      🍳 Start Preparing
+                    </button>
+                  )}
+                  {order.status === 'Preparing' && (
+                    <button
+                      className="btn-primary"
+                      onClick={() => handleStatusChange(order.id, 'Completed')}
+                      style={{ background: '#6A1B9A' }}
+                    >
+                      ✓ Mark Completed
+                    </button>
+                  )}
+                  {order.status === 'Completed' && (
+                    <span style={{ color: '#6A1B9A', fontWeight: '600', fontSize: '0.85rem' }}>✓ Done</span>
+                  )}
+                  {order.status === 'Declined' && (
+                    <span style={{ color: '#C62828', fontWeight: '600', fontSize: '0.85rem' }}>✕ Declined</span>
+                  )}
                 </div>
               </div>
             ))}
@@ -559,17 +687,6 @@ export default function AdminDashboard({
                 className="btn-outline"
                 type="button"
                 onClick={() => {
-                  if (window.confirm('Clear all orders? This cannot be undone.')) {
-                    onClearOrders?.();
-                  }
-                }}
-              >
-                Clear Orders
-              </button>
-              <button
-                className="btn-outline"
-                type="button"
-                onClick={() => {
                   if (window.confirm('Reset menu to default items?')) {
                     onResetMenu?.();
                   }
@@ -578,7 +695,7 @@ export default function AdminDashboard({
                 Reset Menu
               </button>
             </div>
-            <p className="admin-muted">Data is saved locally on this device only.</p>
+            <p className="admin-muted">Orders are stored in the database. Menu items are saved locally.</p>
           </div>
         </div>
       </div>

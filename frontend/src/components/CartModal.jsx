@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 
 export default function CartModal({ cart, close, remove, updateQty, placeOrder }) {
-  const [step, setStep] = useState('cart'); // 'cart' or 'payment'
+  const [step, setStep] = useState('cart'); // 'cart', 'name', or 'payment'
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [customerName, setCustomerName] = useState('');
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
   
@@ -14,6 +15,14 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
   };
 
   const handleProceed = () => {
+    setStep('name');
+  };
+
+  const handleNameSubmit = () => {
+    if (!customerName.trim()) {
+      alert('Please enter your name to continue.');
+      return;
+    }
     setStep('payment');
   };
 
@@ -21,15 +30,42 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
     setIsProcessing(true);
 
     if (paymentMethod === 'cash') {
-      setTimeout(() => {
+      try {
+        const res = await fetch('/api/order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: cart.map(i => ({ id: i.id, qty: i.qty, name: i.name, price: i.price })),
+            total,
+            address: 'Pickup at Counter',
+            phone: '+91 9999999999',
+            customer_name: customerName.trim()
+          })
+        });
+        const data = await res.json();
         setIsProcessing(false);
         placeOrder({
-          orderId: "ORD-CASH-" + Math.floor(Math.random() * 9999),
+          orderId: data.order_display_id || data.order_id || ("ORD-CASH-" + Math.floor(Math.random() * 9999)),
+          db_order_id: data.db_order_id || null,
+          order_display_id: data.order_display_id || null,
+          customerName: customerName.trim(),
           items: cart,
           total,
           paymentMethod
         });
-      }, 1000);
+      } catch (err) {
+        console.error('Cash order failed:', err);
+        setIsProcessing(false);
+        placeOrder({
+          orderId: "ORD-CASH-" + Math.floor(Math.random() * 9999),
+          db_order_id: null,
+          order_display_id: null,
+          customerName: customerName.trim(),
+          items: cart,
+          total,
+          paymentMethod
+        });
+      }
       return;
     }
 
@@ -42,7 +78,8 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
           items: cart,
           total: total,
           address: 'Default Local Address, Pune',
-          phone: '+91 9999999999'
+          phone: '+91 9999999999',
+          customer_name: customerName.trim()
         })
       });
       const orderData = await res.json();
@@ -76,7 +113,7 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 order_id: orderData.order_id,
-                orderData: { items: cart, total: total, address: 'Pune', phone: '9999999999' }
+                orderData: { items: cart, total: total, address: 'Pune', phone: '9999999999', customer_name: customerName.trim() }
               })
             });
             const verifyData = await verifyRes.json();
@@ -84,7 +121,10 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
             if (verifyData.success) {
               setIsProcessing(false);
               placeOrder({
-                orderId: verifyData.db_order_id,
+                orderId: verifyData.order_display_id || verifyData.db_order_id,
+                db_order_id: verifyData.db_order_id,
+                order_display_id: verifyData.order_display_id || null,
+                customerName: customerName.trim(),
                 items: cart,
                 total,
                 paymentMethod
@@ -166,6 +206,47 @@ export default function CartModal({ cart, close, remove, updateQty, placeOrder }
                   </div>
                 </>
               )}
+            </div>
+          ) : step === 'name' ? (
+            <div className="modal-body">
+              <div className="modal-name">👤 Your Name</div>
+              <div className="modal-sub">Enter your name so we can assign this order to you</div>
+              
+              <div style={{ marginTop: '32px' }}>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.2rem' }}>👤</span>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Enter your name"
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
+                    style={{
+                      width: '100%',
+                      padding: '16px 16px 16px 44px',
+                      borderRadius: '12px',
+                      border: '2px solid var(--border)',
+                      fontSize: '1.1rem',
+                      outline: 'none',
+                      transition: 'border-color 0.3s ease',
+                      boxSizing: 'border-box',
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = 'var(--brown)'}
+                    onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+                  />
+                </div>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                  This name will appear on your order for easy identification.
+                </p>
+              </div>
+
+              <div className="modal-footer" style={{ borderTop: 'none', paddingTop: '32px', display: 'flex', gap: '16px' }}>
+                <button className="btn-outline" onClick={() => setStep('cart')} style={{ flex: 1, padding: '14px' }}>Back</button>
+                <button className="btn-primary" onClick={handleNameSubmit} style={{ flex: 1.5, padding: '14px' }}>
+                  Continue to Payment
+                </button>
+              </div>
             </div>
           ) : (
             <div className="modal-body payment-step">

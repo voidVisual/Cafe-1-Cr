@@ -1,6 +1,21 @@
-version: '3.8'
-
 services:
+  mongo:
+    image: mongo:7
+    container_name: cafe_mongo
+    # NOTE: Port NOT exposed to host in production.
+    # Uncomment below only for local dev/debugging:
+    # ports:
+    #   - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
   api:
     build:
       context: ./api
@@ -10,7 +25,14 @@ services:
       - PYTHONUNBUFFERED=1
       - MONGODB_URI=mongodb://mongo:27017
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/menu"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   frontend:
     build:
@@ -18,22 +40,16 @@ services:
     container_name: cafe_frontend
     restart: unless-stopped
     depends_on:
-      - api
-
-  mongo:
-    image: mongo:7
-    container_name: cafe_mongo
-    volumes:
-      - mongo_data:/data/db
-    restart: unless-stopped
+      api:
+        condition: service_healthy
 
   nginx:
-    image: nginx:latest
+    image: nginx:stable-alpine
     container_name: cafe_nginx
     ports:
       - "80:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - frontend
       - api

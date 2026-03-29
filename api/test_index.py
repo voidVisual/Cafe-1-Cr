@@ -32,13 +32,16 @@ def test_place_cash_order():
         "items": [{"id": 1, "qty": 2, "name": "Cappuccino", "price": 320}],
         "total": 640.0,
         "address": "123 Test St",
-        "phone": "9999999999"
+        "phone": "9999999999",
+        "customer_name": "Test User"
     }
     response = client.post("/api/order", json=order_payload)
     assert response.status_code == 200
     data = response.json()
     assert "Order placed successfully" in data["message"]
     assert "db_order_id" in data
+    assert "order_display_id" in data
+    assert data["order_display_id"].startswith("ORD-")
 
 def test_get_order_history():
     response = client.get("/api/orders/history/9999999999")
@@ -62,3 +65,60 @@ def test_get_today_revenue():
     assert "order_count" in data
     assert data["order_count"] >= 1
     assert data["total_revenue"] >= 640.0
+
+def test_admin_get_all_orders():
+    response = client.get("/api/admin/orders")
+    assert response.status_code == 200
+    data = response.json()
+    assert "orders" in data
+    assert len(data["orders"]) >= 1
+    order = data["orders"][0]
+    assert "id" in order
+    assert "status" in order
+    assert "items" in order
+    assert "customer_phone" in order
+
+def test_admin_update_order_status():
+    # First, get an order ID
+    orders_resp = client.get("/api/admin/orders")
+    orders_data = orders_resp.json()
+    order_id = orders_data["orders"][0]["id"]
+
+    # Update to Approved
+    response = client.put(f"/api/admin/orders/{order_id}/status", json={"status": "Approved"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert data["order"]["status"] == "Approved"
+    assert data["order"]["approved_at"] is not None
+
+    # Update to Preparing
+    response = client.put(f"/api/admin/orders/{order_id}/status", json={"status": "Preparing"})
+    assert response.status_code == 200
+    assert response.json()["order"]["status"] == "Preparing"
+
+    # Update to Completed
+    response = client.put(f"/api/admin/orders/{order_id}/status", json={"status": "Completed"})
+    assert response.status_code == 200
+    assert response.json()["order"]["status"] == "Completed"
+
+    # Invalid status
+    response = client.put(f"/api/admin/orders/{order_id}/status", json={"status": "InvalidStatus"})
+    assert response.status_code == 400
+
+def test_user_get_order_status():
+    # Get an order ID
+    orders_resp = client.get("/api/admin/orders")
+    order_id = orders_resp.json()["orders"][0]["id"]
+
+    response = client.get(f"/api/orders/status/{order_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert "status" in data
+    assert "prep_time_minutes" in data
+    assert "items" in data
+    assert data["id"] == order_id
+
+    # Invalid ID
+    response = client.get("/api/orders/status/invalidid")
+    assert response.status_code == 400
