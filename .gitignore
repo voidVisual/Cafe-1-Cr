@@ -1,7 +1,31 @@
 node_modules/
 dist/
 .env
+.env.*
 __pycache__/
 *.pyc
 .DS_Store
 api/venv/
+.venv/
+api/.venv/
+.pytest_cache/
+api/.pytest_cache/
+frontend/.vite/
+
+# Editors
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+
+# Certbot / Let's Encrypt (contains private keys)
+certbot/

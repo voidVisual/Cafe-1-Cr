@@ -52,11 +52,13 @@ function computeSecondsLeft(approvedAt, prepTimeMinutes) {
   return Math.max(0, Math.round(prepTimeMinutes * 60 - elapsed));
 }
 
-export default function LiveTracking({ orderData }) {
+export default function LiveTracking({ orderData, onFinalize }) {
   const isOrdered = !!orderData;
   const dbOrderId = orderData?.db_order_id;
   const displayId = orderData?.order_display_id || orderData?.order_id;
   const customerName = orderData?.customerName || '';
+
+  const statusLookupId = dbOrderId || (String(displayId || '').toUpperCase().startsWith('ORD-') ? displayId : null);
 
   const [orderStatus, setOrderStatus] = useState(null);
   // Local display value for the countdown — updated every second via RAF/interval
@@ -64,8 +66,10 @@ export default function LiveTracking({ orderData }) {
   const [toastMessage, setToastMessage] = useState(null);
 
   const rafRef = useRef(null);
+  const pollIntervalRef = useRef(null);
   const notifiedRef = useRef(false);
   const prevStatusRef = useRef(null);
+  const finalizedRef = useRef(false);
   // Store approved_at + prepTimeMinutes in a ref so the RAF closure never goes stale
   const timerParamsRef = useRef({ approvedAt: null, prepTimeMinutes: 10 });
 
@@ -102,17 +106,27 @@ export default function LiveTracking({ orderData }) {
 
   // ── Poll order status from API every 500ms ────────────────────────────────
   useEffect(() => {
-    if (!dbOrderId) {
+    if (!statusLookupId) {
       setOrderStatus(null);
       setDisplaySecondsLeft(null);
       prevStatusRef.current = null;
       notifiedRef.current = false;
+      finalizedRef.current = false;
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
       return;
     }
 
+    // New order / new lookup id: reset per-order refs
+    notifiedRef.current = false;
+    prevStatusRef.current = null;
+    finalizedRef.current = false;
+
     const poll = async () => {
       try {
-        const res = await fetch(`/api/orders/status/${dbOrderId}`);
+        const res = await fetch(`/api/orders/status/${statusLookupId}`);
         if (!res.ok) return;
         const data = await res.json();
 
@@ -139,6 +153,17 @@ export default function LiveTracking({ orderData }) {
         if (data.status === 'Completed' || data.status === 'Declined') {
           if (rafRef.current) cancelAnimationFrame(rafRef.current);
           if (data.status === 'Completed') setDisplaySecondsLeft(0);
+
+          // Stop polling once the order is final to avoid hammering the API
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
+
+          if (!finalizedRef.current) {
+            finalizedRef.current = true;
+            try { onFinalize?.(data); } catch (_) { /* ignore */ }
+          }
         }
 
         // Fire toast on status change
@@ -164,12 +189,15 @@ export default function LiveTracking({ orderData }) {
     }
 
     poll(); // Immediate first poll
-    const interval = setInterval(poll, POLL_INTERVAL);
+    pollIntervalRef.current = setInterval(poll, POLL_INTERVAL);
     return () => {
-      clearInterval(interval);
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [dbOrderId, showToast, startCountdown]);
+  }, [statusLookupId, showToast, startCountdown]);
 
   const formatTime = (seconds) => {
     if (seconds === null || seconds === undefined) return '--:--';

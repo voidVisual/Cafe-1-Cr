@@ -15,39 +15,43 @@ import { menuItems as defaultMenuItems } from './data/menuData';
 
 const MENU_STORAGE_KEY = 'cafe1cr_menu';
 const ORDERS_STORAGE_KEY = 'cafe1cr_orders';
+const ACTIVE_ORDER_STORAGE_KEY = 'cafe1cr_active_order';
+
+function safeJsonParse(value, fallback) {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
 
 function App() {
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [orderPlaced, setOrderPlaced] = useState(null);
+  const [orderPlaced, setOrderPlaced] = useState(() => {
+    const stored = safeJsonParse(localStorage.getItem(ACTIVE_ORDER_STORAGE_KEY), null);
+    if (!stored) return null;
+    // Optional cleanup: if a finalized order is old, drop it
+    if (stored.finalized_at) {
+      const ageMs = Date.now() - new Date(stored.finalized_at).getTime();
+      if (Number.isFinite(ageMs) && ageMs > 60 * 60 * 1000) {
+        localStorage.removeItem(ACTIVE_ORDER_STORAGE_KEY);
+        return null;
+      }
+    }
+    return stored;
+  });
   const [menuItems, setMenuItems] = useState(() => {
     const stored = localStorage.getItem(MENU_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : defaultMenuItems;
+    return stored ? safeJsonParse(stored, defaultMenuItems) : defaultMenuItems;
   });
   const [orders, setOrders] = useState(() => {
     const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    return stored ? safeJsonParse(stored, []) : [];
   });
   const [isAdmin, setIsAdmin] = useState(window.location.hash === '#admin');
   const [toast, setToast] = useState(null);
-  const [dbOrders, setDbOrders] = useState([]);
-
-  // Fetch all orders from API for admin view (polls every 3s)
-  useEffect(() => {
-    if (!isAdmin) return;
-    const fetchOrders = async () => {
-      try {
-        const res = await fetch('/api/admin/orders');
-        if (res.ok) {
-          const data = await res.json();
-          setDbOrders(data.orders || []);
-        }
-      } catch {}
-    };
-    fetchOrders();
-    const interval = setInterval(fetchOrders, 3000);
-    return () => clearInterval(interval);
-  }, [isAdmin]);
 
   const categories = useMemo(() => {
     const set = new Set(menuItems.map(item => item.category).filter(Boolean));
@@ -67,6 +71,14 @@ function App() {
   useEffect(() => {
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
   }, [orders]);
+
+  useEffect(() => {
+    if (orderPlaced) {
+      localStorage.setItem(ACTIVE_ORDER_STORAGE_KEY, JSON.stringify(orderPlaced));
+    } else {
+      localStorage.removeItem(ACTIVE_ORDER_STORAGE_KEY);
+    }
+  }, [orderPlaced]);
 
   // Reveal animation logic
   useEffect(() => {
@@ -104,14 +116,14 @@ function App() {
   };
 
   const handleOrderCompletion = (orderInfo = {}) => {
-    const orderId = orderInfo.orderId || "ORD-12345";
+    const displayId = orderInfo.order_display_id || orderInfo.orderId || orderInfo.order_id || "ORD-12345";
     const items = orderInfo.items || cart;
     const total = orderInfo.total || items.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const paymentMethod = orderInfo.paymentMethod || 'unknown';
 
     const order = {
-      id: orderId,
-      status: 'pending',
+      id: displayId,
+      status: 'Received',
       items,
       total,
       payment: paymentMethod,
@@ -119,7 +131,14 @@ function App() {
     };
 
     setOrders(prev => [order, ...prev]);
-    setOrderPlaced({ message: "Order placed successfully!", order_id: orderId });
+
+    setOrderPlaced({
+      message: "Order placed successfully!",
+      ...orderInfo,
+      db_order_id: orderInfo.db_order_id || null,
+      order_display_id: orderInfo.order_display_id || (String(displayId).startsWith('ORD-') ? displayId : null),
+      order_id: displayId,
+    });
     setCart([]);
     setIsCartOpen(false);
     
@@ -133,30 +152,10 @@ function App() {
   if (isAdmin) {
     return (
       <AdminDashboard
-        orders={dbOrders.length > 0 ? dbOrders : orders}
         menuItems={menuItems}
-        onUpdateOrderStatus={async (id, status) => {
-          // Optimistic local update
-          setOrders(prev => prev.map(order => order.id === id ? { ...order, status } : order));
-          setDbOrders(prev => prev.map(order => order.id === id ? { ...order, status } : order));
-          // Persist to DB so LiveTracking picks it up instantly
-          try {
-            await fetch(`/api/orders/${id}/status`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status, prep_time_minutes: 10 }),
-            });
-          } catch (e) {
-            console.error('Failed to update order status:', e);
-          }
-        }}
-        onCreateOrder={(order) => {
-          setOrders(prev => [order, ...prev]);
-        }}
         onAddMenuItem={(item) => setMenuItems(prev => [item, ...prev])}
         onUpdateMenuItem={(item) => setMenuItems(prev => prev.map(m => m.id === item.id ? item : m))}
         onRemoveMenuItem={(id) => setMenuItems(prev => prev.filter(m => m.id !== id))}
-        onClearOrders={() => setOrders([])}
         onResetMenu={() => setMenuItems(defaultMenuItems)}
         onExit={() => { window.location.hash = ''; }}
       />
@@ -172,7 +171,17 @@ function App() {
       <WhyUs />
       <Special addToCart={addToCart} />
       <OrderSteps />
-      <LiveTracking orderData={orderPlaced} />
+      <LiveTracking
+        orderData={orderPlaced}
+        onFinalize={(final) => {
+          // Keep it persisted for a while even after completion
+          setOrderPlaced(prev => prev ? {
+            ...prev,
+            finalized_status: final?.status,
+            finalized_at: new Date().toISOString(),
+          } : prev);
+        }}
+      />
       <Testimonials />
       <Footer />
       

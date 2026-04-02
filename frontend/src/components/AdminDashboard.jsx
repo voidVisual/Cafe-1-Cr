@@ -11,6 +11,7 @@ const emptyItem = {
 };
 
 const ADMIN_AUTH_KEY = 'cafe1cr_admin_authed';
+const ADMIN_API_KEY_STORAGE = 'cafe1cr_admin_api_key';
 const POLL_INTERVAL = 1000; // 1 second for near-instant updates
 
 export default function AdminDashboard({
@@ -21,7 +22,10 @@ export default function AdminDashboard({
   onResetMenu,
   onExit
 }) {
-  const [isAuthed, setIsAuthed] = useState(() => sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true');
+  const [isAuthed, setIsAuthed] = useState(() => (
+    sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true' &&
+    Boolean(sessionStorage.getItem(ADMIN_API_KEY_STORAGE))
+  ));
   const [passcode, setPasscode] = useState('');
   const [form, setForm] = useState(emptyItem);
   const [editingId, setEditingId] = useState(null);
@@ -46,6 +50,9 @@ export default function AdminDashboard({
   // These take precedence over polled data for 10 seconds after a status change
   const localOverrides = useRef({});
 
+  const getAdminKey = () => sessionStorage.getItem(ADMIN_API_KEY_STORAGE) || '';
+  const getAdminHeaders = () => ({ 'X-Admin-Key': getAdminKey() });
+
   // Merge polled orders with local overrides
   const mergeWithOverrides = (polledOrders) => {
     const now = Date.now();
@@ -68,7 +75,15 @@ export default function AdminDashboard({
   // ── Fetch orders from API with polling ──────────────────────────────
   const fetchOrders = async () => {
     try {
-      const res = await fetch('/api/admin/orders');
+      const res = await fetch('/api/admin/orders', { headers: getAdminHeaders() });
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          setIsAuthed(false);
+          sessionStorage.removeItem(ADMIN_AUTH_KEY);
+          sessionStorage.removeItem(ADMIN_API_KEY_STORAGE);
+        }
+        throw new Error(`Admin orders failed: ${res.status}`);
+      }
       const data = await res.json();
       if (data.orders) {
         // Merge with local overrides so recent status changes aren't reverted
@@ -100,9 +115,12 @@ export default function AdminDashboard({
     try {
       const res = await fetch(`/api/admin/orders/${orderId}/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAdminHeaders() },
         body: JSON.stringify({ status: newStatus })
       });
+      if (!res.ok) {
+        throw new Error(`Status update failed: ${res.status}`);
+      }
       const data = await res.json();
       if (data.success) {
         // Store local override so polling can't revert this for 10 seconds
@@ -264,17 +282,32 @@ export default function AdminDashboard({
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (passcode === 'admin123') {
-      setIsAuthed(true);
-      setPasscode('');
+    const key = passcode.trim();
+    if (!key) {
+      alert('Enter passcode.');
       return;
     }
-    alert('Incorrect passcode.');
+
+    // Store key and verify against backend (so wrong passcodes fail fast)
+    sessionStorage.setItem(ADMIN_API_KEY_STORAGE, key);
+    fetch('/api/admin/orders', { headers: { 'X-Admin-Key': key } })
+      .then((res) => {
+        if (!res.ok) {
+          sessionStorage.removeItem(ADMIN_API_KEY_STORAGE);
+          throw new Error('Unauthorized');
+        }
+        setIsAuthed(true);
+        setPasscode('');
+      })
+      .catch(() => {
+        alert('Incorrect passcode.');
+      });
   };
 
   const handleLogout = () => {
     setIsAuthed(false);
     sessionStorage.removeItem(ADMIN_AUTH_KEY);
+    sessionStorage.removeItem(ADMIN_API_KEY_STORAGE);
   };
 
   const handlePosAddItem = (e) => {
@@ -538,8 +571,8 @@ export default function AdminDashboard({
                   <div>
                     <strong>{order.order_display_id || `#${order.id.slice(-6)}`}</strong>
                     {order.customer_name && <div style={{ color: 'var(--brown-light)', fontWeight: '600', fontSize: '0.9rem' }}>👤 {order.customer_name}</div>}
+                    {order.customer_phone && <div style={{ color: 'var(--brown-light)', fontWeight: '600', fontSize: '0.9rem' }}>📱 {order.customer_phone}</div>}
                     <div className="admin-muted">{new Date(order.created_at).toLocaleString()}</div>
-
                   </div>
                   <span className="admin-status" style={{ ...getStatusStyle(order.status), padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     {order.status}
