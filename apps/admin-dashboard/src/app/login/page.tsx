@@ -15,8 +15,10 @@ export default function Login() {
     e.preventDefault();
     setError("");
     
-    // Hardcoded authentication for the demo
+    // Demo authentication — in production, replace with real API call
     if (email === "admin@cafe.com" && password === "admin") {
+      // Store a simple auth token so the dashboard can verify the user is logged in
+      localStorage.setItem("cafe_admin_auth", "true");
       router.push("/");
     } else {
       setError("Invalid email or password");

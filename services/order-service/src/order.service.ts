@@ -26,6 +26,7 @@ export class OrderService {
   }
 
   async verifyPayment(data: any) {
+    // db_order_id is the UUID primary key; fall back to order_id for legacy
     const dbOrderId = data.db_order_id || data.order_id;
     const order = await this.orderRepository.findOne({ 
       where: { id: dbOrderId }, 
@@ -146,5 +147,47 @@ export class OrderService {
         price: i.price
       }))
     };
+  }
+
+  async getAllOrders() {
+    const orders = await this.orderRepository.find({
+      relations: { items: true },
+      order: { created_at: 'DESC' },
+      take: 200,
+    });
+    return {
+      orders: orders.map(o => ({
+        id: o.id,
+        order_display_id: o.order_display_id,
+        customer_name: o.customer_name || 'Guest',
+        customer_phone: o.customer_phone,
+        table_number: o.table_number,
+        total_amount: o.total_amount,
+        status: o.status,
+        payment_method: o.payment_method,
+        created_at: o.created_at.toISOString(),
+        items: o.items.map(i => ({ name: i.name, qty: i.qty, price: i.price }))
+      }))
+    };
+  }
+
+  async updateOrderStatus(id: string, status: string, prepTimeMinutes?: number) {
+    const order = await this.orderRepository.findOne({ where: { id } });
+    if (!order) throw new Error('Order not found');
+    order.status = status;
+    if (status === 'Approved' || status === 'Preparing') {
+      order.approved_at = new Date();
+      if (prepTimeMinutes) order.prep_time_minutes = prepTimeMinutes;
+    }
+    await this.orderRepository.save(order);
+    // Emit Kafka event so kitchen and analytics are notified
+    this.kafkaClient.emit('orders.status', {
+      order_id: order.id,
+      order_display_id: order.order_display_id,
+      status: order.status,
+      timestamp: new Date().toISOString(),
+      updated_by: 'admin',
+    });
+    return { success: true, status: order.status };
   }
 }

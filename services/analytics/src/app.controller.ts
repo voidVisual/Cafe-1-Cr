@@ -16,7 +16,8 @@ export class AppController {
     this.appService.processOrderEvent(message);
   }
 
-  @Get('api/admin/analytics')
+  // Route matches Next.js rewrite: /api/analytics → http://localhost:3004/api/analytics
+  @Get('api/analytics')
   getAnalytics() {
     return this.appService.getAnalytics();
   }

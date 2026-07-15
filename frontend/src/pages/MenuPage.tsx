@@ -4,7 +4,17 @@ import { useCartStore } from '@/store/cartStore';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
-const categories = ['All', 'Cold Coffee', 'Hot Coffee & Tea', 'Shakes', 'Fries & Cheese', 'Pasta & Noodles', 'Snacks', 'Desserts', 'Sandwiches', 'Pizzas', 'Burgers'];
+const categories = ['All', 'cappuccino', 'latte', 'machiato', 'cold', 'snack'];
+
+// Display labels for the category buttons (matches what the backend seeds)
+const categoryLabels: Record<string, string> = {
+  'All': 'All',
+  'cappuccino': 'Cappuccino',
+  'latte': 'Latte',
+  'machiato': 'Macchiato',
+  'cold': 'Cold Coffee',
+  'snack': 'Snacks & Food',
+};
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('All');
@@ -46,7 +56,8 @@ export default function MenuPage() {
   };
 
   const filteredItems = menuItems.filter((item) => {
-    const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
+    const matchesCategory = activeCategory === 'All' || 
+      (item.category || '').toLowerCase() === activeCategory.toLowerCase();
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (item.description || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -88,7 +99,7 @@ export default function MenuPage() {
                   : 'bg-white text-coffee-600 hover:bg-coffee-100'
               }`}
             >
-              {category}
+              {categoryLabels[category] || category}
             </button>
           ))}
         </div>

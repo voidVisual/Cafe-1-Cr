@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 
@@ -6,6 +10,16 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+
+  // Client-side auth guard — redirect to login if not authenticated
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem("cafe_admin_auth");
+    if (!isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [router]);
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar />

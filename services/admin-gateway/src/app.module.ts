@@ -10,7 +10,9 @@ import { OrdersController } from './orders.controller';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb://localhost:27017/cafe_db'),
+    MongooseModule.forRoot(
+      process.env.MONGODB_URI || 'mongodb://mongodb:27017/cafe_db',
+    ),
     MongooseModule.forFeature([{ name: MenuItem.name, schema: MenuItemSchema }]),
   ],
   controllers: [AppController, MenuController, OrdersController],

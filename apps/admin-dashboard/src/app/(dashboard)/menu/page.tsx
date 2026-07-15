@@ -25,6 +25,8 @@ const initialMenuItems: MenuItem[] = [
 export default function MenuManagement() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All Categories");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<MenuItem> | null>(null);
@@ -61,6 +63,16 @@ export default function MenuManagement() {
   useEffect(() => {
     fetchMenu();
   }, []);
+
+  // Client-side filter — applied before rendering the table
+  const filteredItems = items.filter((item) => {
+    const matchesSearch = !searchQuery ||
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "All Categories" ||
+      item.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   const handleOpenModal = (item?: MenuItem) => {
     if (item) {
@@ -144,13 +156,19 @@ export default function MenuManagement() {
             </div>
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="block w-full rounded-md border-0 py-1.5 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-orange-600 sm:text-sm sm:leading-6 bg-white"
               placeholder="Search menu items..."
             />
           </div>
 
           <div className="flex items-center gap-2">
-            <select className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-orange-600 sm:text-sm sm:leading-6 bg-white cursor-pointer">
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-orange-600 sm:text-sm sm:leading-6 bg-white cursor-pointer"
+            >
               <option>All Categories</option>
               <option>Coffee</option>
               <option>Tea</option>
@@ -175,7 +193,11 @@ export default function MenuManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
-              {items.map((item) => (
+              {loading ? (
+                <tr><td colSpan={6} className="py-12 text-center text-gray-500">Loading...</td></tr>
+              ) : filteredItems.length === 0 ? (
+                <tr><td colSpan={6} className="py-12 text-center text-gray-500">No items found</td></tr>
+              ) : filteredItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
                     <div className="flex items-center gap-3">
@@ -237,8 +259,8 @@ export default function MenuManagement() {
           <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-gray-700">
-                Showing <span className="font-medium">1</span> to <span className="font-medium">5</span> of{" "}
-                <span className="font-medium">24</span> results
+                Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredItems.length}</span> of{" "}
+                <span className="font-medium">{items.length}</span> results
               </p>
             </div>
             <div>

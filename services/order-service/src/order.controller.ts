@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param } from '@nestjs/common';
+import { Controller, Post, Get, Put, Body, Param } from '@nestjs/common';
 import { OrderService } from './order.service';
 
 @Controller('api')
@@ -29,4 +29,17 @@ export class OrderController {
   getOrderStatus(@Param('id') id: string) {
     return this.orderService.getOrderStatus(id);
   }
+
+  /** Admin: get all orders */
+  @Get('admin/orders')
+  getAllOrders() {
+    return this.orderService.getAllOrders();
+  }
+
+  /** Admin: update order status */
+  @Put('admin/orders/:id/status')
+  updateOrderStatus(@Param('id') id: string, @Body() body: any) {
+    return this.orderService.updateOrderStatus(id, body.status, body.prep_time_minutes);
+  }
 }
+

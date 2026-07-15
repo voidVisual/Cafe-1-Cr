@@ -32,12 +32,15 @@ export class AppService {
     // Populate Dim Items if needed
     if (data.items && Array.isArray(data.items)) {
       for (const item of data.items) {
+        // Use a deterministic numeric id from item_id string, avoid random fallback
+        const numericId = parseInt(item.item_id) || 
+          item.name.split('').reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
         await this.dimItemRepo.save({
-          item_id: parseInt(item.item_id) || Math.floor(Math.random() * 1000), // fallback
+          item_id: numericId,
           name: item.name,
-          category: 'Uncategorized', // Need proper category if provided
-        }).catch(err => {
-          // ignore duplicate keys
+          category: item.category || 'Uncategorized',
+        }).catch(() => {
+          // ignore duplicate key violations
         });
       }
     }
@@ -64,13 +67,13 @@ export class AppService {
       .getRawOne();
 
     // 2. Fetch revenue over the last 7 days for the chart
-    // In SQLite, substr is 1-indexed. We group by substr(time_id, 1, 10).
+    // Use LEFT() instead of SUBSTR() — LEFT works on PostgreSQL
     const chartDataResult = await this.factOrderRepo
       .createQueryBuilder('fact')
-      .select('SUBSTR(fact.time_id, 1, 10)', 'date')
+      .select('LEFT(fact.time_id, 10)', 'date')
       .addSelect('SUM(fact.total_amount)', 'revenue')
       .addSelect('COUNT(fact.order_id)', 'orders')
-      .groupBy('SUBSTR(fact.time_id, 1, 10)')
+      .groupBy('LEFT(fact.time_id, 10)')
       .orderBy('date', 'DESC')
       .limit(7)
       .getRawMany();

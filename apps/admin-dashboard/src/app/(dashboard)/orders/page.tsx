@@ -1,167 +1,261 @@
 "use client";
 
-import { useState } from "react";
-import { Clock, MoreVertical } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Clock, RefreshCw } from "lucide-react";
 import clsx from "clsx";
+import { io, Socket } from "socket.io-client";
 
 type OrderStatus = "New" | "Preparing" | "Ready" | "Completed";
 
+interface OrderItem {
+  name: string;
+  qty: number;
+  price: number;
+}
+
 interface Order {
   id: string;
+  order_display_id: string;
   customerName: string;
-  tableNumber: number;
-  items: { name: string; quantity: number }[];
+  tableNumber: number | null;
+  items: OrderItem[];
   status: OrderStatus;
   time: string;
   total: number;
 }
 
-const initialOrders: Order[] = [
-  {
-    id: "#1023",
-    customerName: "Alice Smith",
-    tableNumber: 4,
-    items: [{ name: "Iced Caramel Macchiato", quantity: 2 }, { name: "Avocado Toast", quantity: 1 }],
-    status: "New",
-    time: "10:42 AM",
-    total: 18.5,
-  },
-  {
-    id: "#1024",
-    customerName: "Bob Jones",
-    tableNumber: 2,
-    items: [{ name: "Espresso", quantity: 1 }],
-    status: "New",
-    time: "10:45 AM",
-    total: 3.5,
-  },
-  {
-    id: "#1021",
-    customerName: "Charlie Brown",
-    tableNumber: 7,
-    items: [{ name: "Matcha Latte", quantity: 1 }, { name: "Blueberry Muffin", quantity: 2 }],
-    status: "Preparing",
-    time: "10:35 AM",
-    total: 12.0,
-  },
-  {
-    id: "#1019",
-    customerName: "Diana Prince",
-    tableNumber: 1,
-    items: [{ name: "Americano", quantity: 1 }],
-    status: "Ready",
-    time: "10:28 AM",
-    total: 4.0,
-  },
-];
-
 const columns: OrderStatus[] = ["New", "Preparing", "Ready", "Completed"];
 
-export default function LiveOrders() {
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
+// Map backend status strings to our kanban columns
+function normalizeStatus(status: string): OrderStatus {
+  const s = (status || "").toLowerCase();
+  if (s === "paid" || s === "pending_payment" || s === "received" || s === "new") return "New";
+  if (s === "preparing" || s === "approved") return "Preparing";
+  if (s === "ready") return "Ready";
+  if (s === "completed" || s === "delivered") return "Completed";
+  return "New";
+}
 
-  const moveOrder = (orderId: string, newStatus: OrderStatus) => {
+export default function LiveOrders() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [connected, setConnected] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
+
+  // Fetch existing orders from backend
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch("/api/admin/orders");
+      if (!res.ok) return;
+      const data = await res.json();
+      const mapped: Order[] = (data.orders || []).map((o: any) => ({
+        id: o.id,
+        order_display_id: o.order_display_id || o.id,
+        customerName: o.customer_name || "Guest",
+        tableNumber: o.table_number ?? null,
+        items: o.items || [],
+        status: normalizeStatus(o.status),
+        time: new Date(o.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        total: parseFloat(o.total_amount) || 0,
+      }));
+      setOrders(mapped);
+    } catch (err) {
+      console.error("Failed to fetch orders:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Connect to admin-gateway WebSocket for live updates
+  useEffect(() => {
+    fetchOrders();
+
+    // Admin-gateway Socket.IO runs on port 3002
+    const socket = io("http://localhost:3002", { transports: ["websocket", "polling"] });
+    socketRef.current = socket;
+
+    socket.on("connect", () => setConnected(true));
+    socket.on("disconnect", () => setConnected(false));
+
+    socket.on("order_created", (newOrder: any) => {
+      const mapped: Order = {
+        id: newOrder.id,
+        order_display_id: newOrder.order_display_id || newOrder.id,
+        customerName: newOrder.customer_name || "Guest",
+        tableNumber: newOrder.table_number ?? null,
+        items: newOrder.items || [],
+        status: "New",
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        total: parseFloat(newOrder.total_amount) || 0,
+      };
+      setOrders((prev) => {
+        // Avoid duplicates
+        if (prev.some((o) => o.id === mapped.id)) return prev;
+        return [mapped, ...prev];
+      });
+    });
+
+    socket.on("order_status", (update: any) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === update.order_id
+            ? { ...o, status: normalizeStatus(update.status) }
+            : o
+        )
+      );
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  const moveOrder = async (orderId: string, newStatus: OrderStatus) => {
+    // Optimistic update
     setOrders((prev) =>
       prev.map((order) =>
         order.id === orderId ? { ...order, status: newStatus } : order
       )
     );
+
+    // Persist to backend
+    try {
+      await fetch(`/api/admin/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+    } catch (err) {
+      console.error("Failed to update order status:", err);
+    }
   };
 
   return (
     <div className="h-full flex flex-col space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Live Orders</h1>
-        <div className="flex items-center gap-2">
-          <span className="flex h-3 w-3 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-          </span>
-          <span className="text-sm font-medium text-gray-600">Receiving live updates</span>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={fetchOrders}
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="flex h-3 w-3 relative">
+              {connected ? (
+                <>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </>
+              ) : (
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-400"></span>
+              )}
+            </span>
+            <span className="text-sm font-medium text-gray-600">
+              {connected ? "Receiving live updates" : "Connecting..."}
+            </span>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-6 overflow-hidden pb-4">
-        {columns.map((column) => (
-          <div key={column} className="flex flex-col rounded-xl bg-gray-100/50 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-800">{column}</h2>
-              <span className="bg-white text-gray-600 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">
-                {orders.filter((o) => o.status === column).length}
-              </span>
-            </div>
+      {loading ? (
+        <div className="flex items-center justify-center flex-1">
+          <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin" />
+        </div>
+      ) : (
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-6 overflow-hidden pb-4">
+          {columns.map((column) => (
+            <div key={column} className="flex flex-col rounded-xl bg-gray-100/50 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-gray-800">{column}</h2>
+                <span className="bg-white text-gray-600 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                  {orders.filter((o) => o.status === column).length}
+                </span>
+              </div>
 
-            <div className="flex-1 overflow-y-auto space-y-4">
-              {orders
-                .filter((o) => o.status === column)
-                .map((order) => (
-                  <div
-                    key={order.id}
-                    className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 cursor-grab hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-bold text-orange-600">{order.id}</span>
-                      <div className="flex items-center text-xs text-gray-500 font-medium">
-                        <Clock className="w-3 h-3 mr-1" />
-                        {order.time}
-                      </div>
-                    </div>
-
-                    <div className="mb-3 flex justify-between items-start">
-                      <p className="font-medium text-gray-900">{order.customerName}</p>
-                      <span className="bg-orange-100 text-orange-800 text-xs font-bold px-2 py-1 rounded">
-                        Table {order.tableNumber}
-                      </span>
-                    </div>
-
-                    <div className="space-y-1 mb-4">
-                      {order.items.map((item, idx) => (
-                        <div key={idx} className="flex justify-between text-sm">
-                          <span className="text-gray-600">
-                            <span className="font-medium text-gray-900 mr-2">{item.quantity}x</span>
-                            {item.name}
-                          </span>
+              <div className="flex-1 overflow-y-auto space-y-4">
+                {orders
+                  .filter((o) => o.status === column)
+                  .map((order) => (
+                    <div
+                      key={order.id}
+                      className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-bold text-orange-600">{order.order_display_id}</span>
+                        <div className="flex items-center text-xs text-gray-500 font-medium">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {order.time}
                         </div>
-                      ))}
-                    </div>
+                      </div>
 
-                    <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                      <span className="font-semibold text-gray-900">₹{order.total.toFixed(2)}</span>
-                      
-                      {/* Simple action buttons based on status */}
-                      <div className="flex gap-2">
-                        {column === "New" && (
-                          <button
-                            onClick={() => moveOrder(order.id, "Preparing")}
-                            className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-md font-medium hover:bg-blue-100 transition-colors"
-                          >
-                            Prepare
-                          </button>
-                        )}
-                        {column === "Preparing" && (
-                          <button
-                            onClick={() => moveOrder(order.id, "Ready")}
-                            className="text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded-md font-medium hover:bg-green-100 transition-colors"
-                          >
-                            Ready
-                          </button>
-                        )}
-                        {column === "Ready" && (
-                          <button
-                            onClick={() => moveOrder(order.id, "Completed")}
-                            className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-md font-medium hover:bg-gray-800 transition-colors"
-                          >
-                            Complete
-                          </button>
+                      <div className="mb-3 flex justify-between items-start">
+                        <p className="font-medium text-gray-900">{order.customerName}</p>
+                        {order.tableNumber !== null && (
+                          <span className="bg-orange-100 text-orange-800 text-xs font-bold px-2 py-1 rounded">
+                            Table {order.tableNumber}
+                          </span>
                         )}
                       </div>
+
+                      <div className="space-y-1 mb-4">
+                        {order.items.map((item, idx) => (
+                          <div key={idx} className="flex justify-between text-sm">
+                            <span className="text-gray-600">
+                              <span className="font-medium text-gray-900 mr-2">{item.qty}x</span>
+                              {item.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                        <span className="font-semibold text-gray-900">
+                          ₹{order.total.toFixed(2)}
+                        </span>
+
+                        <div className="flex gap-2">
+                          {column === "New" && (
+                            <button
+                              onClick={() => moveOrder(order.id, "Preparing")}
+                              className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-md font-medium hover:bg-blue-100 transition-colors"
+                            >
+                              Prepare
+                            </button>
+                          )}
+                          {column === "Preparing" && (
+                            <button
+                              onClick={() => moveOrder(order.id, "Ready")}
+                              className="text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded-md font-medium hover:bg-green-100 transition-colors"
+                            >
+                              Ready
+                            </button>
+                          )}
+                          {column === "Ready" && (
+                            <button
+                              onClick={() => moveOrder(order.id, "Completed")}
+                              className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-md font-medium hover:bg-gray-800 transition-colors"
+                            >
+                              Complete
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
+                  ))}
+
+                {orders.filter((o) => o.status === column).length === 0 && (
+                  <div className="flex flex-col items-center justify-center h-24 text-gray-400 text-sm">
+                    <p>No orders</p>
                   </div>
-                ))}
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

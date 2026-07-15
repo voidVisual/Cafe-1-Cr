@@ -9,6 +9,7 @@ export default function CheckoutPage() {
   const totalPrice = items ? items.reduce((acc, item) => acc + (Number(item.price) || 0) * (Number(item.qty) || 1), 0) : 0;
   const [isOrdering, setIsOrdering] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [orderDisplayId, setOrderDisplayId] = useState('');
   
   // New state for customer details
   const [customerName, setCustomerName] = useState('');
@@ -27,19 +28,20 @@ export default function CheckoutPage() {
     setIsOrdering(true);
 
     try {
-      // 1. Create the order (PENDING_PAYMENT)
+      // 1. Create the order (PENDING_PAYMENT) — payload matches NestJS OrderService.placeOrder()
       const orderPayload = {
         customer_name: customerName,
         table_number: parseInt(tableNumber, 10),
+        payment_method: 'CASH',
+        total: totalPrice * 1.05 + 40.00,
         items: items.map(item => ({
-          menu_item_id: item.id,
-          quantity: item.qty,
-          unit_price: item.price
+          id: item.id,           // ← matches order.service.ts: item.id
+          name: item.name,       // ← required by backend
+          qty: item.qty,         // ← matches backend field name
+          price: item.price,     // ← matches backend field name
         })),
-        total_amount: totalPrice * 1.05 + 40.00
       };
 
-      // 1. Create the order (PENDING_PAYMENT)
       const orderRes = await fetch('/api/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -49,16 +51,21 @@ export default function CheckoutPage() {
 
       if (!orderRes.ok) throw new Error(orderData.message || 'Failed to place order');
 
-      // 2. Process Payment
+      // 2. Verify / confirm payment — send db_order_id (the UUID), not the undefined .id
       const paymentRes = await fetch('/api/payment/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_id: orderData.id, status: 'SUCCESS' })
+        body: JSON.stringify({ 
+          db_order_id: orderData.db_order_id,  // ← correct field from placeOrder response
+          order_id: orderData.order_id,
+          status: 'SUCCESS'
+        })
       });
 
       if (!paymentRes.ok) throw new Error('Payment failed');
 
-      // 3. Success! The backend just emitted the Kafka event.
+      // 3. Success
+      setOrderDisplayId(orderData.order_display_id || orderData.db_order_id || '');
       setOrderComplete(true);
       clearCart();
     } catch (err) {
@@ -75,7 +82,12 @@ export default function CheckoutPage() {
           <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-10 h-10" />
           </div>
-          <h2 className="font-serif text-3xl font-bold text-coffee-900 mb-4">Order Received!</h2>
+          <h2 className="font-serif text-3xl font-bold text-coffee-900 mb-2">Order Received!</h2>
+          {orderDisplayId && (
+            <p className="text-coffee-500 text-sm font-mono bg-coffee-50 rounded-lg px-4 py-2 mb-4 inline-block border border-coffee-100">
+              Order ID: <span className="font-bold text-coffee-900">{orderDisplayId}</span>
+            </p>
+          )}
           <p className="text-coffee-600 mb-8">
             Thank you for your order. We are preparing it fresh and will have it ready for you shortly.
           </p>
@@ -86,6 +98,7 @@ export default function CheckoutPage() {
       </div>
     );
   }
+
 
   if (items.length === 0) {
     return (
