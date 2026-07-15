@@ -71,7 +71,13 @@ export default function Footer() {
         <div className="pt-8 border-t border-coffee-800 text-center text-sm text-coffee-400 flex flex-col items-center gap-2 relative">
           <p>&copy; {new Date().getFullYear()} Cafe1Cr. All rights reserved.</p>
           <p>Developed and managed by the <a href="https://rudranshcortex.live/" target="_blank" rel="noopener noreferrer" className="text-coffee-300 hover:text-white transition-colors">RudranshCortex</a></p>
-          <a href={import.meta.env.VITE_ADMIN_URL || "http://localhost:3000/login"} target="_blank" rel="noopener noreferrer" className="absolute right-0 bottom-0 p-2 text-coffee-600 hover:text-coffee-300 transition-colors" title="Admin Login">
+          <a 
+            href={import.meta.env.VITE_ADMIN_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3000/login` : "http://localhost:3000/login")} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="absolute right-0 bottom-0 p-2 text-coffee-600 hover:text-coffee-300 transition-colors" 
+            title="Admin Login"
+          >
             <Info size={16} />
           </a>
         </div>
