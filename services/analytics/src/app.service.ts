@@ -17,17 +17,21 @@ export class AppService {
   ) {}
 
   async processOrderEvent(data: any) {
-    console.log('Analytics processing order event:', data.id);
+    const orderId = data.order_id || data.id;
+    if (!orderId) {
+      console.log('Skipping event, no order_id:', data);
+      return;
+    }
+    console.log('Analytics processing order event:', orderId);
     
     // Save to fact table
     const time_id = new Date().toISOString().substring(0, 13); // yyyy-mm-ddThh
-    await this.factOrderRepo.save({
-      order_id: data.id,
-      time_id,
-      total_amount: data.total_amount,
-      status: data.status,
-      payment_status: data.payment_method || 'UNKNOWN',
-    });
+    const updateData: any = { order_id: orderId, time_id };
+    if (data.total_amount !== undefined) updateData.total_amount = data.total_amount;
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.payment_method !== undefined) updateData.payment_status = data.payment_method;
+    
+    await this.factOrderRepo.save(updateData);
 
     // Populate Dim Items if needed
     if (data.items && Array.isArray(data.items)) {

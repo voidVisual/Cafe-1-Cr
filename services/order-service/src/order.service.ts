@@ -69,7 +69,7 @@ export class OrderService {
       table_number: orderDto.table_number || null,
       total_amount: orderDto.total,
       status: 'PENDING_PAYMENT',
-      items: orderDto.items.map(item => ({
+      items: orderDto.items.map((item: any) => ({
         item_id: item.id.toString(),
         name: item.name,
         qty: item.qty,
@@ -116,7 +116,7 @@ export class OrderService {
   }
 
   async getOrderStatus(id: string) {
-    let order: Order;
+    let order: Order | null;
     if (id.toUpperCase().startsWith('ORD-')) {
       order = await this.orderRepository.findOne({ where: { order_display_id: id }, relations: { items: true } });
     } else {
@@ -141,10 +141,10 @@ export class OrderService {
       approved_at: order.approved_at ? order.approved_at.toISOString() : null,
       prep_time_minutes: order.prep_time_minutes || 10,
       prep_seconds_left,
-      items: order.items.map(i => ({
-        name: i.name,
-        qty: i.qty,
-        price: i.price
+      items: order.items.map((item: any) => ({
+        name: item.name,
+        qty: item.qty,
+        price: item.price
       }))
     };
   }

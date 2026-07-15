@@ -11,7 +11,7 @@ import { OrdersController } from './orders.controller';
 @Module({
   imports: [
     MongooseModule.forRoot(
-      process.env.MONGODB_URI || 'mongodb://mongodb:27017/cafe_db',
+      process.env.MONGODB_URI || 'mongodb://localhost:27017/cafe_db',
     ),
     MongooseModule.forFeature([{ name: MenuItem.name, schema: MenuItemSchema }]),
   ],

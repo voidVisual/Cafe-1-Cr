@@ -4,11 +4,12 @@
   "private": true,
   "workspaces": [
     "frontend",
-    "services/*"
+    "services/*",
+    "apps/*"
   ],
   "scripts": {
     "dev": "docker-compose up -d && npm run start:all",
-    "start:all": "npx concurrently \"npm run dev -w frontend\" \"npm run start:dev -w services/admin-gateway\" \"npm run start:dev -w services/analytics\" \"npm run start:dev -w services/kitchen-display\" \"npm run start:dev -w services/order-service\""
+    "start:all": "npx concurrently \"npm run dev -w frontend\" \"npm run dev -w admin-dashboard\" \"npm run start:dev -w admin-gateway\" \"npm run start:dev -w analytics\" \"npm run start:dev -w kitchen-display\" \"npm run start:dev -w order-service\""
   },
   "dependencies": {
     "caniuse-lite": "^1.0.30001805"

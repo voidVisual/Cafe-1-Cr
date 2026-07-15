@@ -27,12 +27,15 @@ export default function MenuManagement() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<MenuItem> | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    category: "Coffee",
+    category: "Cappuccino",
     price: "",
     status: "Available" as "Available" | "Out of Stock",
     prepTime: "3 min",
@@ -74,6 +77,16 @@ export default function MenuManagement() {
     return matchesSearch && matchesCategory;
   });
 
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedItems = filteredItems.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory]);
+
   const handleOpenModal = (item?: MenuItem) => {
     if (item) {
       setEditingItem(item);
@@ -81,15 +94,51 @@ export default function MenuManagement() {
         name: item.name,
         category: item.category,
         price: item.price.toString(),
-        status: item.status,
+        status: item.status as "Available" | "Out of Stock",
         prepTime: item.prepTime,
-        image: item.image
+        image: item.image || ""
       });
     } else {
       setEditingItem(null);
-      setFormData({ name: "", category: "Coffee", price: "", status: "Available", prepTime: "3 min", image: "" });
+      setFormData({
+        name: "",
+        category: "Cappuccino",
+        price: "",
+        status: "Available",
+        prepTime: "3 min",
+        image: ""
+      });
     }
     setIsModalOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const formDataObj = new FormData();
+      formDataObj.append('image', file);
+
+      const res = await fetch('/api/menu/upload', {
+        method: 'POST',
+        body: formDataObj,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setFormData(prev => ({ ...prev, image: data.url }));
+      } else {
+        console.error('Image upload failed');
+        alert('Failed to upload image. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      alert('An error occurred while uploading the image.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -170,10 +219,15 @@ export default function MenuManagement() {
               className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-orange-600 sm:text-sm sm:leading-6 bg-white cursor-pointer"
             >
               <option>All Categories</option>
-              <option>Coffee</option>
-              <option>Tea</option>
-              <option>Food</option>
-              <option>Bakery</option>
+              <option>Cappuccino</option>
+              <option>Latte</option>
+              <option>Macchiato</option>
+              <option>Cold Coffee</option>
+              <option>Fries</option>
+              <option>Pizza</option>
+              <option>Sandwich</option>
+              <option>Burger</option>
+              <option>Snacks & Pasta</option>
             </select>
           </div>
         </div>
@@ -195,9 +249,9 @@ export default function MenuManagement() {
             <tbody className="divide-y divide-gray-200 bg-white">
               {loading ? (
                 <tr><td colSpan={6} className="py-12 text-center text-gray-500">Loading...</td></tr>
-              ) : filteredItems.length === 0 ? (
+              ) : paginatedItems.length === 0 ? (
                 <tr><td colSpan={6} className="py-12 text-center text-gray-500">No items found</td></tr>
-              ) : filteredItems.map((item) => (
+              ) : paginatedItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
                     <div className="flex items-center gap-3">
@@ -254,36 +308,51 @@ export default function MenuManagement() {
           </table>
         </div>
         
-        {/* Pagination Dummy */}
-        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
-          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredItems.length}</span> of{" "}
-                <span className="font-medium">{items.length}</span> results
-              </p>
-            </div>
-            <div>
-              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                <button className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
-                  Previous
-                </button>
-                <button className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
-                  1
-                </button>
-                <button className="relative inline-flex items-center px-4 py-2 text-sm font-semibold bg-orange-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600">
-                  2
-                </button>
-                <button className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
-                  3
-                </button>
-                <button className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
-                  Next
-                </button>
-              </nav>
+        {/* Pagination */}
+        {filteredItems.length > 0 && (
+          <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(endIndex, filteredItems.length)}</span> of{" "}
+                  <span className="font-medium">{filteredItems.length}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button 
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i + 1}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={clsx(
+                        "relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0",
+                        currentPage === i + 1
+                          ? "bg-orange-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600"
+                          : "text-gray-900 hover:bg-gray-50"
+                      )}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button 
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </nav>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Modal */}
@@ -310,19 +379,34 @@ export default function MenuManagement() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full rounded-md border-gray-300 border p-2 focus:border-orange-500 focus:ring-orange-500"
+                  className="w-full rounded-md border-gray-300 border p-2 text-gray-900 focus:border-orange-500 focus:ring-orange-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-                <input 
-                  type="url" 
-                  value={formData.image}
-                  onChange={(e) => setFormData({...formData, image: e.target.value})}
-                  className="w-full rounded-md border-gray-300 border p-2 focus:border-orange-500 focus:ring-orange-500"
-                  placeholder="https://images.unsplash.com/..."
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Image Upload</label>
+                <div className="flex items-center space-x-4">
+                  {formData.image && (
+                    <div className="h-12 w-12 flex-shrink-0 rounded-md border border-gray-200 overflow-hidden">
+                      <img src={formData.image} alt="Preview" className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isUploading}
+                      className="block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-md file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-orange-50 file:text-orange-700
+                        hover:file:bg-orange-100 disabled:opacity-50"
+                    />
+                    {isUploading && <p className="text-xs text-orange-600 mt-1">Uploading...</p>}
+                  </div>
+                </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
@@ -331,12 +415,17 @@ export default function MenuManagement() {
                   <select 
                     value={formData.category}
                     onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    className="w-full rounded-md border-gray-300 border p-2 focus:border-orange-500 focus:ring-orange-500"
+                    className="w-full rounded-md border-gray-300 border p-2 text-gray-900 focus:border-orange-500 focus:ring-orange-500"
                   >
-                    <option>Coffee</option>
-                    <option>Tea</option>
-                    <option>Food</option>
-                    <option>Bakery</option>
+                    <option>Cappuccino</option>
+                    <option>Latte</option>
+                    <option>Macchiato</option>
+                    <option>Cold Coffee</option>
+                    <option>Fries</option>
+                    <option>Pizza</option>
+                    <option>Sandwich</option>
+                    <option>Burger</option>
+                    <option>Snacks & Pasta</option>
                   </select>
                 </div>
                 <div>
@@ -347,7 +436,7 @@ export default function MenuManagement() {
                     required
                     value={formData.price}
                     onChange={(e) => setFormData({...formData, price: e.target.value})}
-                    className="w-full rounded-md border-gray-300 border p-2 focus:border-orange-500 focus:ring-orange-500"
+                    className="w-full rounded-md border-gray-300 border p-2 text-gray-900 focus:border-orange-500 focus:ring-orange-500"
                   />
                 </div>
               </div>
@@ -358,7 +447,7 @@ export default function MenuManagement() {
                   <select 
                     value={formData.status}
                     onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                    className="w-full rounded-md border-gray-300 border p-2 focus:border-orange-500 focus:ring-orange-500"
+                    className="w-full rounded-md border-gray-300 border p-2 text-gray-900 focus:border-orange-500 focus:ring-orange-500"
                   >
                     <option>Available</option>
                     <option>Out of Stock</option>
@@ -371,7 +460,7 @@ export default function MenuManagement() {
                     required
                     value={parseInt(formData.prepTime) || ''}
                     onChange={(e) => setFormData({...formData, prepTime: `${e.target.value} min`})}
-                    className="w-full rounded-md border-gray-300 border p-2 focus:border-orange-500 focus:ring-orange-500"
+                    className="w-full rounded-md border-gray-300 border p-2 text-gray-900 focus:border-orange-500 focus:ring-orange-500"
                   />
                 </div>
               </div>
