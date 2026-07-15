@@ -1,20 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, Star, Plus } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { Button } from '@/components/ui/button';
-import { menuItems } from '@/data/menuData';
+import { toast } from 'sonner';
 
-const categories = ['All', 'Cold Coffee', 'Hot Coffee & Tea', 'Shakes', 'Fries & Cheese', 'Pasta & Noodles', 'Snacks', 'Desserts'];
+const categories = ['All', 'Cold Coffee', 'Hot Coffee & Tea', 'Shakes', 'Fries & Cheese', 'Pasta & Noodles', 'Snacks', 'Desserts', 'Sandwiches', 'Pizzas', 'Burgers'];
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const addToCart = useCartStore((state) => state.addItem);
+
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const res = await fetch('/api/menu');
+        const data = await res.json();
+        setMenuItems(data.map((item: any) => ({
+          ...item,
+          id: item.id.toString(),
+          image: item.img || item.image_url || '/images/hero_coffee.png',
+          description: item.desc || item.description || 'Delicious cafe item',
+          rating: item.rating || 4.5
+        })));
+      } catch (err) {
+        console.error("Failed to fetch menu:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMenu();
+  }, []);
+
+  const handleAddToCart = (item: typeof menuItems[0]) => {
+    addToCart({ 
+      id: item.id, 
+      name: item.name, 
+      price: item.price, 
+      image: item.image,
+      category: item.category
+    });
+    toast.success(`${item.name} has been added to your basket`);
+  };
 
   const filteredItems = menuItems.filter((item) => {
     const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.description.toLowerCase().includes(searchQuery.toLowerCase());
+                          (item.description || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -60,20 +94,25 @@ export default function MenuPage() {
         </div>
 
         {/* Menu Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {filteredItems.map((item) => (
-            <div key={item.id} className="group rounded-3xl bg-white border border-coffee-100 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
-              <div className="relative h-64 overflow-hidden">
-                <img 
-                  src={item.image} 
-                  alt={item.name} 
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-coffee-800">
-                  {item.category}
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+             <div className="w-12 h-12 border-4 border-coffee-200 border-t-coffee-600 rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {filteredItems.map((item) => (
+              <div key={item.id} className="group rounded-3xl bg-white border border-coffee-100 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
+                <div className="relative h-64 overflow-hidden">
+                  <img 
+                    src={item.image} 
+                    alt={item.name} 
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 bg-gray-100"
+                  />
+                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-coffee-800">
+                    {item.category}
+                  </div>
                 </div>
-              </div>
               <div className="p-6 flex flex-col flex-grow">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-serif text-xl font-bold text-coffee-900 leading-tight">{item.name}</h3>
@@ -84,9 +123,9 @@ export default function MenuPage() {
                 </div>
                 <p className="text-coffee-600 text-sm mb-6 line-clamp-2 flex-grow">{item.description}</p>
                 <div className="flex items-center justify-between mt-auto">
-                  <span className="text-xl font-bold text-coffee-900">${item.price.toFixed(2)}</span>
+                  <span className="text-xl font-bold text-coffee-900">₹{item.price.toFixed(2)}</span>
                   <Button 
-                    onClick={() => addToCart({ id: item.id.toString(), name: item.name, price: item.price, image: item.image, quantity: 1 })}
+                    onClick={() => handleAddToCart(item)}
                     variant="outline"
                     size="sm"
                     className="rounded-full border-coffee-200 text-coffee-700 hover:bg-coffee-900 hover:text-white hover:border-coffee-900 transition-colors"
@@ -99,8 +138,9 @@ export default function MenuPage() {
             </div>
           ))}
         </div>
+        )}
 
-        {filteredItems.length === 0 && (
+        {!loading && filteredItems.length === 0 && (
           <div className="text-center py-20">
             <h3 className="text-2xl font-serif text-coffee-900 mb-2">No items found</h3>
             <p className="text-coffee-600">Try adjusting your search or category filter.</p>

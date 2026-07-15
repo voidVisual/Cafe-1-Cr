@@ -8,8 +8,18 @@ import { cn } from '@/lib/utils';
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const totalItems = useCartStore((state) => state.totalItems);
+  const items = useCartStore((state) => state.items);
+  const totalItems = items ? items.reduce((acc, item) => acc + item.qty, 0) : 0;
+  const [animateCart, setAnimateCart] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    if (totalItems > 0) {
+      setAnimateCart(true);
+      const timer = setTimeout(() => setAnimateCart(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [totalItems]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -67,7 +77,10 @@ export default function Navbar() {
             <Link to="/checkout">
               <ShoppingBag className="w-5 h-5 text-foreground/80 group-hover:text-coffee-700 transition-colors" />
               {totalItems > 0 && (
-                <span className="absolute top-0 right-0 bg-coffee-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center translate-x-1 -translate-y-1">
+                <span className={cn(
+                  "absolute top-0 right-0 bg-coffee-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center translate-x-1 -translate-y-1 transition-transform duration-300",
+                  animateCart ? "scale-150" : "scale-100"
+                )}>
                   {totalItems}
                 </span>
               )}

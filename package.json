@@ -1,0 +1,19 @@
+{
+  "name": "cafe-system",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "services/*"
+  ],
+  "scripts": {
+    "dev": "docker-compose up -d && npm run start:all",
+    "start:all": "npx concurrently \"npm run dev -w frontend\" \"npm run start:dev -w services/admin-gateway\" \"npm run start:dev -w services/analytics\" \"npm run start:dev -w services/kitchen-display\" \"npm run start:dev -w services/order-service\""
+  },
+  "dependencies": {
+    "caniuse-lite": "^1.0.30001805"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
+  }
+}

@@ -5,19 +5,67 @@ import { useCartStore } from '@/store/cartStore';
 import { Button } from '@/components/ui/button';
 
 export default function CheckoutPage() {
-  const { items, updateQty, removeItem, clearCart, totalPrice } = useCartStore();
+  const { items, updateQty, removeItem, clearCart } = useCartStore();
+  const totalPrice = items ? items.reduce((acc, item) => acc + (Number(item.price) || 0) * (Number(item.qty) || 1), 0) : 0;
   const [isOrdering, setIsOrdering] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  
+  // New state for customer details
+  const [customerName, setCustomerName] = useState('');
+  const [tableNumber, setTableNumber] = useState('');
+  const [error, setError] = useState('');
+  
   const navigate = useNavigate();
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    if (!customerName.trim() || !tableNumber.trim()) {
+      setError('Please provide both your name and table number.');
+      return;
+    }
+    
+    setError('');
     setIsOrdering(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsOrdering(false);
+
+    try {
+      // 1. Create the order (PENDING_PAYMENT)
+      const orderPayload = {
+        customer_name: customerName,
+        table_number: parseInt(tableNumber, 10),
+        items: items.map(item => ({
+          menu_item_id: item.id,
+          quantity: item.qty,
+          unit_price: item.price
+        })),
+        total_amount: totalPrice * 1.05 + 40.00
+      };
+
+      // 1. Create the order (PENDING_PAYMENT)
+      const orderRes = await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload)
+      });
+      const orderData = await orderRes.json();
+
+      if (!orderRes.ok) throw new Error(orderData.message || 'Failed to place order');
+
+      // 2. Process Payment
+      const paymentRes = await fetch('/api/payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderData.id, status: 'SUCCESS' })
+      });
+
+      if (!paymentRes.ok) throw new Error('Payment failed');
+
+      // 3. Success! The backend just emitted the Kafka event.
       setOrderComplete(true);
       clearCart();
-    }, 2000);
+    } catch (err) {
+      setError('Something went wrong processing your order. Please try again.');
+    } finally {
+      setIsOrdering(false);
+    }
   };
 
   if (orderComplete) {
@@ -82,7 +130,7 @@ export default function CheckoutPage() {
                     <div className="flex-grow">
                       <h3 className="font-bold text-coffee-900">{item.name}</h3>
                       <p className="text-coffee-500 text-sm">{item.category}</p>
-                      <div className="text-coffee-900 font-medium mt-1">${item.price.toFixed(2)}</div>
+                      <div className="text-coffee-900 font-medium mt-1">₹{item.price.toFixed(2)}</div>
                     </div>
                     
                     <div className="flex items-center gap-3 bg-coffee-50 rounded-full px-2 py-1 border border-coffee-100">
@@ -116,27 +164,64 @@ export default function CheckoutPage() {
           {/* Checkout Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-coffee-100 sticky top-28">
+              <h2 className="text-xl font-bold text-coffee-900 mb-6 border-b border-coffee-100 pb-4">Customer Details</h2>
+              
+              <div className="space-y-4 mb-6">
+                {error && (
+                  <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100">
+                    {error}
+                  </div>
+                )}
+                <div>
+                  <label htmlFor="customerName" className="block text-sm font-medium text-coffee-700 mb-1">
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    id="customerName"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full rounded-lg border-coffee-200 shadow-sm focus:border-coffee-500 focus:ring-coffee-500 sm:text-sm p-2.5 border"
+                    placeholder="Enter your name"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="tableNumber" className="block text-sm font-medium text-coffee-700 mb-1">
+                    Table Number
+                  </label>
+                  <input
+                    type="number"
+                    id="tableNumber"
+                    value={tableNumber}
+                    onChange={(e) => setTableNumber(e.target.value)}
+                    className="w-full rounded-lg border-coffee-200 shadow-sm focus:border-coffee-500 focus:ring-coffee-500 sm:text-sm p-2.5 border"
+                    placeholder="E.g. 4"
+                    min="1"
+                  />
+                </div>
+              </div>
+
               <h2 className="text-xl font-bold text-coffee-900 mb-6 border-b border-coffee-100 pb-4">Payment</h2>
               
               <div className="space-y-3 mb-6 text-sm">
                 <div className="flex justify-between text-coffee-600">
                   <span>Subtotal</span>
-                  <span className="font-medium text-coffee-900">${totalPrice.toFixed(2)}</span>
+                  <span className="font-medium text-coffee-900">₹{totalPrice.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-coffee-600">
                   <span>Taxes (5%)</span>
-                  <span className="font-medium text-coffee-900">${(totalPrice * 0.05).toFixed(2)}</span>
+                  <span className="font-medium text-coffee-900">₹{(totalPrice * 0.05).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-coffee-600">
                   <span>Delivery Fee</span>
-                  <span className="font-medium text-coffee-900">$2.99</span>
+                  <span className="font-medium text-coffee-900">₹40.00</span>
                 </div>
               </div>
               
               <div className="border-t border-coffee-100 pt-4 mb-8">
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-lg text-coffee-900">Total</span>
-                  <span className="font-bold text-2xl text-coffee-900">${(totalPrice * 1.05 + 2.99).toFixed(2)}</span>
+                  <span className="font-bold text-2xl text-coffee-900">₹{(totalPrice * 1.05 + 40.00).toFixed(2)}</span>
                 </div>
               </div>
 

@@ -1,41 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Plus, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cartStore';
 
-const featuredItems = [
-  {
-    id: '1',
-    name: 'Caramel Macchiato',
-    category: 'Coffee',
-    price: 4.5,
-    rating: 4.8,
-    image: '/images/caramel_macchiato.png',
-    description: 'Freshly brewed espresso with vanilla-flavored syrup, milk and ice, topped with a caramel drizzle.'
-  },
-  {
-    id: '2',
-    name: 'Matcha Latte',
-    category: 'Tea',
-    price: 5.0,
-    rating: 4.9,
-    image: '/images/matcha_latte.png',
-    description: 'Smooth and creamy matcha sweetened just right and served with steamed milk.'
-  },
-  {
-    id: '3',
-    name: 'Almond Croissant',
-    category: 'Pastry',
-    price: 3.5,
-    rating: 4.7,
-    image: '/images/almond_croissant.png',
-    description: 'Flaky, buttery croissant filled with sweet almond paste and topped with sliced almonds.'
-  }
-];
-
 export default function FeaturedMenu() {
   const addItem = useCartStore((state) => state.addItem);
+  const [featuredItems, setFeaturedItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const res = await fetch('/api/menu');
+        const data = await res.json();
+        // Take up to 3 items
+        setFeaturedItems(data.slice(0, 3).map((item: any) => ({
+          ...item,
+          id: item.id.toString(),
+          image: item.img || item.image_url || '/images/hero_coffee.png',
+          description: item.desc || item.description || 'Delicious cafe item',
+          rating: item.rating || 4.5,
+          quantity: 1
+        })));
+      } catch (err) {
+        console.error("Failed to fetch featured menu:", err);
+      }
+    };
+    fetchMenu();
+  }, []);
 
   return (
     <section className="py-24 bg-white">
@@ -81,7 +73,7 @@ export default function FeaturedMenu() {
                 </p>
                 
                 <div className="flex items-center justify-between mt-auto">
-                  <span className="text-xl font-bold text-coffee-900">${item.price.toFixed(2)}</span>
+                  <span className="text-xl font-bold text-coffee-900">₹{item.price.toFixed(2)}</span>
                   <Button 
                     variant="outline" 
                     size="sm" 

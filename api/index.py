@@ -17,6 +17,8 @@ orders_collection = mongo_db.get_collection("orders")
 orders_collection.create_index("customer_phone")
 orders_collection.create_index("created_at")
 orders_collection.create_index("order_display_id")
+menu_collection = mongo_db.get_collection("menu")
+
 
 _ADMIN_INDEXES_READY = False
 
@@ -203,7 +205,11 @@ class PaymentVerifyRequest(BaseModel):
 
 @app.get("/api/menu")
 def get_menu():
-    return menu_data
+    items = list(menu_collection.find({}, {"_id": 0}))
+    if not items:
+        menu_collection.insert_many(menu_data)
+        items = list(menu_collection.find({}, {"_id": 0}))
+    return items
 
 @app.post("/api/payment/create")
 def create_payment(order: OrderRequest):

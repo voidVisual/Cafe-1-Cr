@@ -17,6 +17,9 @@ export default defineConfig({
   },
   server: {
     host: true,
-    proxy: { '/api': { target: 'http://localhost:8000', changeOrigin: true } }
+    proxy: { 
+      '/api/menu': { target: 'http://localhost:3002', changeOrigin: true },
+      '/api': { target: 'http://localhost:3001', changeOrigin: true }
+    }
   }
 });

@@ -26,9 +26,9 @@ const features = [
 
 export default function WhyUs() {
   return (
-    <section className="py-24 bg-gradient-to-b from-coffee-900 via-coffee-800 to-coffee-900 text-white relative overflow-hidden">
-      {/* Decorative background element */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-coffee-800/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+    <section className="py-24 bg-coffee-900 text-white relative overflow-hidden">
+      {/* Decorative background element removed for solid color look */}
+
       
       <div className="container mx-auto px-4 md:px-8 relative z-10">
         <div className="text-center max-w-2xl mx-auto mb-16">
@@ -40,8 +40,8 @@ export default function WhyUs() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, index) => (
-            <div key={index} className="bg-gradient-to-br from-coffee-800/50 to-coffee-900/50 backdrop-blur-md border border-coffee-700/50 p-8 rounded-3xl hover:from-coffee-800 hover:to-coffee-700 transition-all duration-300">
-              <div className="w-14 h-14 bg-gradient-to-br from-coffee-600 to-coffee-700 rounded-2xl flex items-center justify-center text-coffee-100 shadow-inner mb-6">
+            <div key={index} className="bg-coffee-800/50 backdrop-blur-md border border-coffee-700/50 p-8 rounded-3xl hover:bg-coffee-800 transition-all duration-300">
+              <div className="w-14 h-14 bg-coffee-700 rounded-2xl flex items-center justify-center text-coffee-100 shadow-inner mb-6">
                 {feature.icon}
               </div>
               <h3 className="text-xl font-bold mb-3">{feature.title}</h3>

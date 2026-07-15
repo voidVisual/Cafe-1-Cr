@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Coffee, Mail, Phone, MapPin } from 'lucide-react';
+import { Coffee, Mail, Phone, MapPin, Info } from 'lucide-react';
 
 export default function Footer() {
   return (
     <footer className="bg-gradient-to-br from-coffee-900 to-black text-coffee-50 pt-20 pb-10 border-t border-coffee-800">
-      <div className="container mx-auto px-4 md:px-8">
+      <div className="container mx-auto px-4 md:px-8 relative">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-6">
@@ -68,8 +68,12 @@ export default function Footer() {
           </div>
         </div>
         
-        <div className="pt-8 border-t border-coffee-800 text-center text-sm text-coffee-400">
+        <div className="pt-8 border-t border-coffee-800 text-center text-sm text-coffee-400 flex flex-col items-center gap-2 relative">
           <p>&copy; {new Date().getFullYear()} Cafe1Cr. All rights reserved.</p>
+          <p>Developed and managed by the <a href="https://rudranshcortex.live/" target="_blank" rel="noopener noreferrer" className="text-coffee-300 hover:text-white transition-colors">RudranshCortex</a></p>
+          <a href="http://localhost:3000/login" target="_blank" rel="noopener noreferrer" className="absolute right-0 bottom-0 p-2 text-coffee-600 hover:text-coffee-300 transition-colors" title="Admin Login">
+            <Info size={16} />
+          </a>
         </div>
       </div>
     </footer>

@@ -1,71 +1,84 @@
+version: '3.8'
+
 services:
-  mongo:
-    image: mongo:7
-    container_name: cafe_mongo
+  postgres:
+    image: postgres:15-alpine
+    container_name: cafe_postgres
+    environment:
+      POSTGRES_USER: cafe_user
+      POSTGRES_PASSWORD: cafe_password
+      POSTGRES_DB: cafe_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cafe_user -d cafe_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:latest
+    container_name: cafe_mongodb
     ports:
       - "27017:27017"
     volumes:
-      - mongo_data:/data/db
+      - mongodb_data:/data/db
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
 
-  api:
-    build:
-      context: ./api
-    container_name: cafe_api
-    restart: unless-stopped
-    environment:
-      - PYTHONUNBUFFERED=1
-      - MONGODB_URI=mongodb://mongo:27017
-      - ADMIN_API_KEY=${ADMIN_API_KEY:-admin123}
-    depends_on:
-      mongo:
-        condition: service_healthy
-    healthcheck:
-      # Use Python (always available) instead of curl (not in slim image)
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/menu')"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-
-  frontend:
-    build:
-      context: ./frontend
-    container_name: cafe_frontend
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_healthy
-
-  nginx:
-    image: nginx:stable-alpine
-    container_name: cafe_nginx
+  kafka:
+    image: apache/kafka:latest
+    container_name: cafe_kafka
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./certbot/www:/var/www/certbot:ro
-      - ./certbot/conf:/etc/letsencrypt:ro
-    depends_on:
-      - frontend
-      - api
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     restart: unless-stopped
 
-  certbot:
-    image: certbot/certbot:v2.11.0
-    container_name: cafe_certbot
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    # Run manually, e.g.:
-    # docker compose run --rm certbot certonly --webroot -w /var/www/certbot -d cafe1cr.food -d www.cafe1cr.food --agree-tos --register-unsafely-without-email
+  kafka-init:
+    image: apache/kafka:latest
+    container_name: cafe_kafka_init
+    depends_on:
+      - kafka
+    command: >
+      bash -c "
+        echo 'Waiting for Kafka to be ready...'
+        sleep 10
+        /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server kafka:9092 --partitions 6 --replication-factor 1 --topic orders.created --config retention.ms=604800000
+        /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server kafka:9092 --partitions 6 --replication-factor 1 --topic orders.status --config retention.ms=604800000
+        /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --topic payments.processed --config retention.ms=2592000000
+        /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --topic inventory.updated --config retention.ms=604800000
+        /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --topic menu.updated --config cleanup.policy=compact
+        /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server kafka:9092 --partitions 6 --replication-factor 1 --topic orders.analytics --config retention.ms=2592000000
+        /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --topic notifications.dispatch --config retention.ms=259200000
+        echo 'Successfully created topics.'
+      "
+
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #   container_name: cafe_frontend
+  #   ports:
+  #     - "5173:5173"
+  #   environment:
+  #     - VITE_API_URL=http://localhost:3000
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - admin-gateway
 
 volumes:
-  mongo_data:
+  postgres_data:
+  mongodb_data:

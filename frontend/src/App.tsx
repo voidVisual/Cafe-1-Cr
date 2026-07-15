@@ -5,9 +5,12 @@ import LandingPage from './pages/LandingPage';
 import MenuPage from './pages/MenuPage';
 import CheckoutPage from './pages/CheckoutPage';
 
+import { Toaster } from 'sonner';
+
 function App() {
   return (
     <div className="font-sans selection:bg-coffee-900 selection:text-white">
+      <Toaster position="bottom-right" richColors />
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<LandingPage />} />
