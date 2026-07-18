@@ -29,7 +29,7 @@ export class OrdersController {
   async getOrders() {
     try {
       const res = await fetch(
-        `http://localhost:${process.env.ORDER_SERVICE_PORT || 3001}/api/admin/orders`,
+        `http://${process.env.ORDER_SERVICE_HOST || 'localhost'}:${process.env.ORDER_SERVICE_PORT || 3001}/api/admin/orders`,
       );
       if (!res.ok) {
         // Order-service may not have this endpoint yet — return empty array gracefully
@@ -49,7 +49,7 @@ export class OrdersController {
   async updateOrderStatus(@Param('id') id: string, @Body() body: any) {
     try {
       const res = await fetch(
-        `http://localhost:${process.env.KITCHEN_SERVICE_PORT || 3003}/api/kitchen/orders/${id}/status`,
+        `http://${process.env.KITCHEN_SERVICE_HOST || 'localhost'}:${process.env.KITCHEN_SERVICE_PORT || 3003}/api/kitchen/orders/${id}/status`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
