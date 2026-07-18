@@ -61,19 +61,26 @@ export class OrderService {
   }
 
   async placeOrder(orderDto: any) {
+    // Compute total from items as a safety fallback (handles NaN / missing total)
+    const computedTotal = (orderDto.items || []).reduce(
+      (sum: number, item: any) => sum + (Number(item.price) || 0) * (Number(item.qty) || 1),
+      0
+    );
+    const totalAmount = Number(orderDto.total) || computedTotal || 0;
+
     const newOrder = this.orderRepository.create({
       payment_method: orderDto.payment_method || 'CASH',
       customer_phone: this.normalizePhone(orderDto.phone),
       customer_address: orderDto.address,
       customer_name: orderDto.customer_name || '',
       table_number: orderDto.table_number || null,
-      total_amount: orderDto.total,
+      total_amount: totalAmount,
       status: 'PENDING_PAYMENT',
-      items: orderDto.items.map((item: any) => ({
-        item_id: item.id.toString(),
-        name: item.name,
-        qty: item.qty,
-        price: item.price,
+      items: (orderDto.items || []).map((item: any) => ({
+        item_id: String(item.id || item.menu_item_id || ''),
+        name: item.name || '',
+        qty: Number(item.qty) || 1,
+        price: Number(item.price) || 0,
       })),
     });
 
@@ -81,7 +88,7 @@ export class OrderService {
     savedOrder.order_display_id = "ORD-" + savedOrder.id.substring(savedOrder.id.length - 6).toUpperCase();
     await this.orderRepository.save(savedOrder);
 
-    // CRITICAL: Do NOT emit orders.created here! It is only emitted after payment is verified.
+    // CRITICAL: Do NOT emit orders.created here! Only emitted after payment is verified.
 
     return {
       message: "Order placed successfully via Pay at Counter!",
