@@ -31,7 +31,9 @@ export class MenuController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
-      destination: join(__dirname, '..', '..', '..', 'frontend', 'public', 'images'),
+      // UPLOAD_DIR env var is set to /app/uploads in Docker (mounted volume)
+      // Falls back to local frontend/public/images for development
+      destination: process.env.UPLOAD_DIR || join(__dirname, '..', '..', '..', 'frontend', 'public', 'images'),
       filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const ext = extname(file.originalname);
