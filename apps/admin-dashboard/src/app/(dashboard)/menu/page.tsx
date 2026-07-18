@@ -11,15 +11,15 @@ interface MenuItem {
   price: number;
   status: "Available" | "Out of Stock";
   prepTime: string;
-  image: string;
+  image?: string;
 }
 
 const initialMenuItems: MenuItem[] = [
-  { id: "1", name: "Iced Caramel Macchiato", category: "Coffee", price: 5.5, status: "Available", prepTime: "3 min" },
-  { id: "2", name: "Avocado Toast", category: "Food", price: 8.0, status: "Available", prepTime: "5 min" },
-  { id: "3", name: "Matcha Latte", category: "Tea", price: 4.5, status: "Available", prepTime: "3 min" },
-  { id: "4", name: "Blueberry Muffin", category: "Bakery", price: 3.5, status: "Out of Stock", prepTime: "1 min" },
-  { id: "5", name: "Espresso", category: "Coffee", price: 3.0, status: "Available", prepTime: "2 min" },
+  { id: "1", name: "Iced Caramel Macchiato", category: "Coffee", price: 5.5, status: "Available", prepTime: "3 min", image: "" },
+  { id: "2", name: "Avocado Toast", category: "Food", price: 8.0, status: "Available", prepTime: "5 min", image: "" },
+  { id: "3", name: "Matcha Latte", category: "Tea", price: 4.5, status: "Available", prepTime: "3 min", image: "" },
+  { id: "4", name: "Blueberry Muffin", category: "Bakery", price: 3.5, status: "Out of Stock", prepTime: "1 min", image: "" },
+  { id: "5", name: "Espresso", category: "Coffee", price: 3.0, status: "Available", prepTime: "2 min", image: "" },
 ];
 
 export default function MenuManagement() {

@@ -128,7 +128,7 @@ export default function Dashboard() {
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280' }} dx={-10} />
                   <Tooltip
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    formatter={(value: number) => [`₹${value.toFixed(2)}`, 'Revenue']}
+                    formatter={(value) => [`₹${Number(value ?? 0).toFixed(2)}`, 'Revenue']}
                   />
                   <Line type="monotone" dataKey="revenue" stroke="#ea580c" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
                 </LineChart>
