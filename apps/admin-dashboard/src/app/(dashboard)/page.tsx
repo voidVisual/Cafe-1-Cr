@@ -86,33 +86,31 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Active Customers</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">89</p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">{loading ? '...' : stats.ordersToday}</p>
             </div>
             <div className="rounded-full bg-orange-50 p-3">
               <Users className="h-6 w-6 text-orange-600" />
             </div>
           </div>
           <div className="mt-4 flex items-center text-sm">
-            <TrendingUp className="mr-1 h-4 w-4 text-green-500" />
-            <span className="text-green-500 font-medium">+2.1%</span>
-            <span className="ml-2 text-gray-500">from yesterday</span>
+            <span className="text-gray-500">Orders placed today</span>
           </div>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Avg. Prep Time</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">4m 12s</p>
+              <p className="text-sm font-medium text-gray-500">Avg. Order Value</p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">
+                {loading ? '...' : stats.ordersToday > 0 ? `₹${(stats.revenueToday / stats.ordersToday).toFixed(0)}` : '₹0'}
+              </p>
             </div>
             <div className="rounded-full bg-purple-50 p-3">
               <TrendingUp className="h-6 w-6 text-purple-600" />
             </div>
           </div>
           <div className="mt-4 flex items-center text-sm">
-            <TrendingUp className="mr-1 h-4 w-4 text-red-500 rotate-180" />
-            <span className="text-red-500 font-medium">-1.2%</span>
-            <span className="ml-2 text-gray-500">from yesterday</span>
+            <span className="text-gray-500">Revenue per order today</span>
           </div>
         </div>
       </div>

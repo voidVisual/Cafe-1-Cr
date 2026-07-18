@@ -1,8 +1,16 @@
 "use client";
 
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export function Header() {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem("cafe_admin_auth");
+    router.replace("/login");
+  };
+
   return (
     <header className="flex h-16 w-full items-center justify-between border-b border-gray-200 bg-white px-6">
       <div className="flex flex-1 items-center gap-4">
@@ -25,6 +33,14 @@ export function Header() {
         <div className="h-8 w-8 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center overflow-hidden">
           <img src="https://ui-avatars.com/api/?name=Admin+User&background=random" alt="Admin" className="h-full w-full object-cover" />
         </div>
+        <button
+          onClick={handleLogout}
+          title="Logout"
+          className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors border border-gray-200"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </button>
       </div>
     </header>
   );

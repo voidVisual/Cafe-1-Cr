@@ -70,8 +70,11 @@ export default function LiveOrders() {
   useEffect(() => {
     fetchOrders();
 
-    // Admin-gateway Socket.IO runs on port 3002
-    const socket = io("http://localhost:3002", { transports: ["websocket", "polling"] });
+    // Admin-gateway Socket.IO runs on port 3002.
+    // In production, set NEXT_PUBLIC_GATEWAY_URL to your server's address.
+    const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || 
+      (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3002` : 'http://localhost:3002');
+    const socket = io(gatewayUrl, { transports: ["websocket", "polling"] });
     socketRef.current = socket;
 
     socket.on("connect", () => setConnected(true));
