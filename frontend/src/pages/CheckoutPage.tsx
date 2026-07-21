@@ -42,7 +42,7 @@ export default function CheckoutPage() {
         })),
       };
 
-      const orderRes = await fetch('/api/order', {
+      const orderRes = await fetch((import.meta.env.VITE_API_URL || '') + '/api/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderPayload)
@@ -52,7 +52,7 @@ export default function CheckoutPage() {
       if (!orderRes.ok) throw new Error(orderData.message || 'Failed to place order');
 
       // 2. Verify / confirm payment — send db_order_id (the UUID), not the undefined .id
-      const paymentRes = await fetch('/api/payment/verify', {
+      const paymentRes = await fetch((import.meta.env.VITE_API_URL || '') + '/api/payment/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

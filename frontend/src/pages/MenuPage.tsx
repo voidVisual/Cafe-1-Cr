@@ -30,7 +30,7 @@ export default function MenuPage() {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const res = await fetch('/api/menu');
+        const res = await fetch((import.meta.env.VITE_API_URL || '') + '/api/menu');
         const data = await res.json();
         setMenuItems(data.map((item: any) => ({
           ...item,

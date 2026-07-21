@@ -11,7 +11,7 @@ export default function FeaturedMenu() {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const res = await fetch('/api/menu');
+        const res = await fetch((import.meta.env.VITE_API_URL || '') + '/api/menu');
         const data = await res.json();
         // Take up to 3 items
         setFeaturedItems(data.slice(0, 3).map((item: any) => ({
