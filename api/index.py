@@ -913,7 +913,7 @@ class PaymentVerifyRequest(BaseModel):
 @app.get("/api/menu")
 def get_menu():
     items = list(menu_collection.find({}, {"_id": 0}))
-    if len(items) == 8 and any(i.get("name") == "Cappuccino" and i.get("desc", "").startswith("A classic") for i in items):
+    if len(items) < 65 and any(i.get("name") == "Cappuccino" for i in items):
         menu_collection.delete_many({})
         items = []
         
