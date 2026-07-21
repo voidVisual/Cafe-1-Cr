@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Clock, RefreshCw } from "lucide-react";
 import clsx from "clsx";
-import { io, Socket } from "socket.io-client";
+
 
 type OrderStatus = "New" | "Preparing" | "Ready" | "Completed";
 
@@ -39,8 +39,8 @@ function normalizeStatus(status: string): OrderStatus {
 export default function LiveOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [connected, setConnected] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
+  const [connected, setConnected] = useState(true);
+  
 
   // Fetch existing orders from backend
   const fetchOrders = async () => {
@@ -66,50 +66,16 @@ export default function LiveOrders() {
     }
   };
 
-  // Connect to admin-gateway WebSocket for live updates
+  // Smart polling for live updates
   useEffect(() => {
     fetchOrders();
 
-    // Admin-gateway Socket.IO runs on port 3002.
-    // In production, set NEXT_PUBLIC_GATEWAY_URL to your server's address.
-    const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || 
-      (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3002` : 'http://localhost:3002');
-    const socket = io(gatewayUrl, { transports: ["websocket", "polling"] });
-    socketRef.current = socket;
-
-    socket.on("connect", () => setConnected(true));
-    socket.on("disconnect", () => setConnected(false));
-
-    socket.on("order_created", (newOrder: any) => {
-      const mapped: Order = {
-        id: newOrder.id,
-        order_display_id: newOrder.order_display_id || newOrder.id,
-        customerName: newOrder.customer_name || "Guest",
-        tableNumber: newOrder.table_number ?? null,
-        items: newOrder.items || [],
-        status: "New",
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        total: parseFloat(newOrder.total_amount) || 0,
-      };
-      setOrders((prev) => {
-        // Avoid duplicates
-        if (prev.some((o) => o.id === mapped.id)) return prev;
-        return [mapped, ...prev];
-      });
-    });
-
-    socket.on("order_status", (update: any) => {
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === update.order_id
-            ? { ...o, status: normalizeStatus(update.status) }
-            : o
-        )
-      );
-    });
+    const intervalId = setInterval(() => {
+      fetchOrders();
+    }, 10000); // Poll every 10 seconds
 
     return () => {
-      socket.disconnect();
+      clearInterval(intervalId);
     };
   }, []);
 
@@ -157,7 +123,7 @@ export default function LiveOrders() {
               )}
             </span>
             <span className="text-sm font-medium text-gray-600">
-              {connected ? "Receiving live updates" : "Connecting..."}
+              {connected ? "Smart polling active" : "Disconnected"}
             </span>
           </div>
         </div>
