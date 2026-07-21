@@ -171,14 +171,721 @@ async def add_cache_headers(request, call_next):
 
 # Hardcoded menu items initialized for now
 menu_data = [
-  {"id":1,"name":"Cappuccino","sub":"with Chocolate","category":"cappuccino","price":320,"rating":4.8,"reviews":230,"img":"https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80","desc":"A classic cappuccino made with 25ml of rich espresso and 85ml of perfectly steamed milk, topped with chocolate shavings."},
-  {"id":2,"name":"Café Latte","sub":"with Oat Milk","category":"latte","price":310,"rating":4.9,"reviews":187,"img":"https://images.unsplash.com/photo-1485808191679-5f86510bd9d4?w=600&q=80","desc":"A smooth, creamy latte made with oat milk for a naturally sweet finish. Perfect for your morning."},
-  {"id":3,"name":"Machiato","sub":"Caramel Drizzle","category":"machiato","price":360,"rating":4.7,"reviews":145,"img":"https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&q=80","desc":"Espresso marked with a dollop of foam, drizzled with house-made caramel. Bold yet sweet."},
-  {"id":4,"name":"Cold Brew","sub":"Double Strength","category":"cold","price":400,"rating":4.9,"reviews":312,"img":"https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600&q=80","desc":"Steeped for 18 hours in cold water for an incredibly smooth, low-acid coffee. Served over ice."},
-  {"id":5,"name":"Americano","sub":"Classic Black","category":"cappuccino","price":240,"rating":4.6,"reviews":98,"img":"https://images.unsplash.com/photo-1510707577719-ae7c14805e3a?w=600&q=80","desc":"A long espresso with hot water for a clean, bold black coffee. The purist's choice."},
-  {"id":6,"name":"Mocha Latte","sub":"Dark Chocolate","category":"latte","price":380,"rating":4.8,"reviews":201,"img":"https://images.unsplash.com/photo-1578314675249-a6910f80cc4e?w=600&q=80","desc":"Espresso blended with rich dark chocolate and steamed milk. A dessert in a cup."},
-  {"id":7,"name":"Cold Latte","sub":"Vanilla Bean","category":"cold","price":360,"rating":4.7,"reviews":156,"img":"https://images.unsplash.com/photo-1541167760496-1628856ab772?w=600&q=80","desc":"Chilled espresso over ice with vanilla-infused cold milk. Sweet, simple, and satisfying."},
-  {"id":8,"name":"Almond Croissant","sub":"Fresh Baked","category":"snack","price":200,"rating":4.8,"reviews":88,"img":"https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&q=80","desc":"Flaky, buttery croissant filled with almond cream and topped with toasted flaked almonds. Baked fresh daily."}
+  {
+    "id": 1,
+    "name": "Thick Cold Coffee (Offer)",
+    "sub": "",
+    "category": "cold",
+    "price": 20.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "12 Months Special Offer"
+  },
+  {
+    "id": 2,
+    "name": "Thick Coffee with Crush",
+    "sub": "",
+    "category": "cold",
+    "price": 35.0,
+    "rating": 4.5,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Refreshing blend"
+  },
+  {
+    "id": 3,
+    "name": "Plane / Thick Cold Coffee",
+    "sub": "",
+    "category": "cold",
+    "price": 40.0,
+    "rating": 4.6,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Simple and thick"
+  },
+  {
+    "id": 4,
+    "name": "Thick Coffee with Icecream",
+    "sub": "",
+    "category": "cold",
+    "price": 50.0,
+    "rating": 4.9,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Rich icecream topping"
+  },
+  {
+    "id": 5,
+    "name": "Caramel Thick Coffee / Crush",
+    "sub": "",
+    "category": "cold",
+    "price": 70.0,
+    "rating": 4.7,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Sweet caramel flavor"
+  },
+  {
+    "id": 6,
+    "name": "French Vanilla Thick Coffee",
+    "sub": "",
+    "category": "cold",
+    "price": 80.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Smooth vanilla taste"
+  },
+  {
+    "id": 7,
+    "name": "Black Coffee",
+    "sub": "",
+    "category": "hot",
+    "price": 20.0,
+    "rating": 4.5,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Strong and bold"
+  },
+  {
+    "id": 8,
+    "name": "Hot Coffee",
+    "sub": "",
+    "category": "hot",
+    "price": 30.0,
+    "rating": 4.7,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Classic hot brew"
+  },
+  {
+    "id": 9,
+    "name": "Hot Chocolate",
+    "sub": "",
+    "category": "hot",
+    "price": 50.0,
+    "rating": 4.9,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Rich cocoa goodness"
+  },
+  {
+    "id": 10,
+    "name": "Lemone Ice Tea (Jumbo)",
+    "sub": "",
+    "category": "hot",
+    "price": 60.0,
+    "rating": 4.6,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Zesty and cool"
+  },
+  {
+    "id": 11,
+    "name": "Peach Ice Tea (Jumbo)",
+    "sub": "",
+    "category": "hot",
+    "price": 60.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Sweet peach infusion"
+  },
+  {
+    "id": 12,
+    "name": "Strawberry Shake",
+    "sub": "",
+    "category": "shakes",
+    "price": 50.0,
+    "rating": 4.5,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Fruity delight"
+  },
+  {
+    "id": 13,
+    "name": "Chocolate Shake",
+    "sub": "",
+    "category": "shakes",
+    "price": 50.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Chocolate heaven"
+  },
+  {
+    "id": 14,
+    "name": "Vanilla Shake",
+    "sub": "",
+    "category": "shakes",
+    "price": 60.0,
+    "rating": 4.4,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Classic vanilla"
+  },
+  {
+    "id": 15,
+    "name": "Oreo Shake",
+    "sub": "",
+    "category": "shakes",
+    "price": 70.0,
+    "rating": 4.9,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Loaded with oreos"
+  },
+  {
+    "id": 16,
+    "name": "Kit-Kat Shake",
+    "sub": "",
+    "category": "shakes",
+    "price": 80.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Crunchy kit-kat blend"
+  },
+  {
+    "id": 17,
+    "name": "Salted Fries",
+    "sub": "",
+    "category": "fries",
+    "price": 70.0,
+    "rating": 4.6,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Crispy and salted"
+  },
+  {
+    "id": 18,
+    "name": "Masala Fries",
+    "sub": "",
+    "category": "fries",
+    "price": 90.0,
+    "rating": 4.7,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Spicy Indian twist"
+  },
+  {
+    "id": 19,
+    "name": "BBQ Fries",
+    "sub": "",
+    "category": "fries",
+    "price": 80.0,
+    "rating": 4.5,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Smoky BBQ flavor"
+  },
+  {
+    "id": 20,
+    "name": "Peri Peri Fries / Cheese",
+    "sub": "",
+    "category": "fries",
+    "price": 110.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Spicy peri peri"
+  },
+  {
+    "id": 21,
+    "name": "Cheese Fries",
+    "sub": "",
+    "category": "fries",
+    "price": 100.0,
+    "rating": 4.9,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Loaded with cheese"
+  },
+  {
+    "id": 22,
+    "name": "Melted Cheese Fries",
+    "sub": "",
+    "category": "fries",
+    "price": 140.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Extra gooey cheese"
+  },
+  {
+    "id": 23,
+    "name": "Tandoori Melted Cheese",
+    "sub": "",
+    "category": "fries",
+    "price": 150.0,
+    "rating": 4.7,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Tandoori spice twist"
+  },
+  {
+    "id": 24,
+    "name": "White Sauce Macaroni",
+    "sub": "",
+    "category": "pasta",
+    "price": 130.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Creamy and cheesy"
+  },
+  {
+    "id": 25,
+    "name": "Masala Pasta",
+    "sub": "",
+    "category": "pasta",
+    "price": 140.0,
+    "rating": 4.6,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Indian style pasta"
+  },
+  {
+    "id": 26,
+    "name": "Red Paprika Pasta",
+    "sub": "",
+    "category": "pasta",
+    "price": 150.0,
+    "rating": 4.7,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Spicy red sauce"
+  },
+  {
+    "id": 27,
+    "name": "Plane Maggie",
+    "sub": "",
+    "category": "pasta",
+    "price": 50.0,
+    "rating": 4.5,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Classic instant noodles"
+  },
+  {
+    "id": 28,
+    "name": "Veg Maggie",
+    "sub": "",
+    "category": "pasta",
+    "price": 60.0,
+    "rating": 4.6,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "With fresh veggies"
+  },
+  {
+    "id": 29,
+    "name": "Masala Maggie",
+    "sub": "",
+    "category": "pasta",
+    "price": 60.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Extra spicy masala"
+  },
+  {
+    "id": 30,
+    "name": "Veg Masala Maggie",
+    "sub": "",
+    "category": "pasta",
+    "price": 70.0,
+    "rating": 4.7,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Veggies and spice"
+  },
+  {
+    "id": 31,
+    "name": "Hara Bhara Kabab",
+    "sub": "",
+    "category": "snack",
+    "price": 70.0,
+    "rating": 4.5,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Healthy green snack"
+  },
+  {
+    "id": 32,
+    "name": "Crispy Onion Rings",
+    "sub": "",
+    "category": "snack",
+    "price": 80.0,
+    "rating": 4.7,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Golden and crunchy"
+  },
+  {
+    "id": 33,
+    "name": "Cheese Potato Shots",
+    "sub": "",
+    "category": "snack",
+    "price": 80.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Cheesy potato bites"
+  },
+  {
+    "id": 34,
+    "name": "Chilli Garlic Shots",
+    "sub": "",
+    "category": "snack",
+    "price": 99.0,
+    "rating": 4.6,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Spicy garlic twist"
+  },
+  {
+    "id": 35,
+    "name": "Veg Fingers",
+    "sub": "",
+    "category": "snack",
+    "price": 90.0,
+    "rating": 4.4,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Crispy veggie sticks"
+  },
+  {
+    "id": 36,
+    "name": "Chicken Nuggets",
+    "sub": "",
+    "category": "snack",
+    "price": 99.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Classic chicken snack"
+  },
+  {
+    "id": 37,
+    "name": "Chicken Cheesy Popcorn",
+    "sub": "",
+    "category": "snack",
+    "price": 120.0,
+    "rating": 4.9,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Cheesy chicken bites"
+  },
+  {
+    "id": 38,
+    "name": "Chocolate - M",
+    "sub": "",
+    "category": "dessert",
+    "price": 90.0,
+    "rating": 4.6,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Medium chocolate cream"
+  },
+  {
+    "id": 39,
+    "name": "Chocolate - B",
+    "sub": "",
+    "category": "dessert",
+    "price": 99.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Big chocolate cream"
+  },
+  {
+    "id": 40,
+    "name": "Chilli Cheese Tost",
+    "sub": "",
+    "category": "snack",
+    "price": 99.0,
+    "rating": 4.7,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Spicy cheese toast"
+  },
+  {
+    "id": 41,
+    "name": "Corn Cheese Tost",
+    "sub": "",
+    "category": "sandwich",
+    "price": 99.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Sweet corn and cheese"
+  },
+  {
+    "id": 42,
+    "name": "Plane Veg Sandwich",
+    "sub": "",
+    "category": "sandwich",
+    "price": 50.0,
+    "rating": 4.4,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Non-grilled plain veg"
+  },
+  {
+    "id": 43,
+    "name": "Chocolat Sandwich",
+    "sub": "",
+    "category": "sandwich",
+    "price": 50.0,
+    "rating": 4.5,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Sweet chocolate spread"
+  },
+  {
+    "id": 44,
+    "name": "Veg Grilled / Cheese",
+    "sub": "",
+    "category": "snack",
+    "price": 70.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Grilled with cheese"
+  },
+  {
+    "id": 45,
+    "name": "Veg Cheese Corn",
+    "sub": "",
+    "category": "snack",
+    "price": 80.0,
+    "rating": 4.7,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Corn and cheese grilled"
+  },
+  {
+    "id": 46,
+    "name": "Tandoori Sandwich",
+    "sub": "",
+    "category": "sandwich",
+    "price": 90.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Spicy tandoori mix"
+  },
+  {
+    "id": 47,
+    "name": "Paneer Cheese Sandwich",
+    "sub": "",
+    "category": "sandwich",
+    "price": 99.0,
+    "rating": 4.9,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Soft paneer and cheese"
+  },
+  {
+    "id": 48,
+    "name": "BBQ Cheese Sandwich",
+    "sub": "",
+    "category": "sandwich",
+    "price": 99.0,
+    "rating": 4.6,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Smoky BBQ flavor"
+  },
+  {
+    "id": 49,
+    "name": "Club Grilled Sandwich",
+    "sub": "",
+    "category": "sandwich",
+    "price": 149.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Triple layer loaded"
+  },
+  {
+    "id": 50,
+    "name": "1CR Spl. Loded Sandwich",
+    "sub": "",
+    "category": "sandwich",
+    "price": 179.0,
+    "rating": 4.9,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "House special loaded"
+  },
+  {
+    "id": 51,
+    "name": "Margherita Cheese Pizza",
+    "sub": "",
+    "category": "pizza",
+    "price": 99.0,
+    "rating": 4.7,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Classic cheese pizza"
+  },
+  {
+    "id": 52,
+    "name": "Veg's Cheese Pizza",
+    "sub": "",
+    "category": "pizza",
+    "price": 120.0,
+    "rating": 4.6,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Fresh veggies and cheese"
+  },
+  {
+    "id": 53,
+    "name": "Chilli Cheese Pizza",
+    "sub": "",
+    "category": "pizza",
+    "price": 130.0,
+    "rating": 4.5,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Spicy chili touch"
+  },
+  {
+    "id": 54,
+    "name": "Veg's Corn Cheese Pizza",
+    "sub": "",
+    "category": "pizza",
+    "price": 140.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Sweet corn and cheese"
+  },
+  {
+    "id": 55,
+    "name": "Tandoori Veg Cheese Pizza",
+    "sub": "",
+    "category": "pizza",
+    "price": 150.0,
+    "rating": 4.9,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Tandoori flavored paneer"
+  },
+  {
+    "id": 56,
+    "name": "Veg's Paneer Cheese Pizza",
+    "sub": "",
+    "category": "pizza",
+    "price": 160.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Loaded with paneer chunks"
+  },
+  {
+    "id": 57,
+    "name": "Chicken Cheese Pizza",
+    "sub": "",
+    "category": "pizza",
+    "price": 170.0,
+    "rating": 4.9,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Grilled chicken toppings"
+  },
+  {
+    "id": 58,
+    "name": "Chilli Chicken Cheese Pizza",
+    "sub": "",
+    "category": "pizza",
+    "price": 180.0,
+    "rating": 4.7,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Spicy chicken slices"
+  },
+  {
+    "id": 59,
+    "name": "Tandoori Chicken Pizza",
+    "sub": "",
+    "category": "pizza",
+    "price": 190.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Tandoori marinated chicken"
+  },
+  {
+    "id": 60,
+    "name": "1 CR Loded Pizza",
+    "sub": "",
+    "category": "pizza",
+    "price": 210.0,
+    "rating": 4.9,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "House special veg/non-veg"
+  },
+  {
+    "id": 61,
+    "name": "Veg Burger / Cheese",
+    "sub": "",
+    "category": "burger",
+    "price": 70.0,
+    "rating": 4.6,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Classic veg cheese burger"
+  },
+  {
+    "id": 62,
+    "name": "Crispy Burger / Cheese",
+    "sub": "",
+    "category": "burger",
+    "price": 90.0,
+    "rating": 4.7,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Extra crispy patty"
+  },
+  {
+    "id": 63,
+    "name": "Tandoori Veg Burger",
+    "sub": "",
+    "category": "burger",
+    "price": 99.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Tandoori sauce spread"
+  },
+  {
+    "id": 64,
+    "name": "Paneer Duble Decker",
+    "sub": "",
+    "category": "burger",
+    "price": 120.0,
+    "rating": 4.9,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Double paneer patty"
+  },
+  {
+    "id": 65,
+    "name": "Chicken Burger / Cheese",
+    "sub": "",
+    "category": "burger",
+    "price": 130.0,
+    "rating": 4.8,
+    "reviews": 120,
+    "img": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&q=80",
+    "desc": "Crispy chicken patty"
+  }
 ]
 
 class OrderItem(BaseModel):
@@ -206,6 +913,10 @@ class PaymentVerifyRequest(BaseModel):
 @app.get("/api/menu")
 def get_menu():
     items = list(menu_collection.find({}, {"_id": 0}))
+    if len(items) == 8 and any(i.get("name") == "Cappuccino" and i.get("desc", "").startswith("A classic") for i in items):
+        menu_collection.delete_many({})
+        items = []
+        
     if not items:
         menu_collection.insert_many(menu_data)
         items = list(menu_collection.find({}, {"_id": 0}))
