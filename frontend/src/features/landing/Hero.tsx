@@ -137,7 +137,7 @@ export default function Hero() {
                     <img src="/img/swiggy-logo.webp" alt="Order on Swiggy" className="h-6 w-auto object-contain" />
                   </a>
                   <a href="#" target="_blank" rel="noreferrer" className="block hover:scale-110 transition-transform bg-white rounded-xl shadow-sm border border-coffee-100 p-2 hover:shadow-md">
-                    <img src="/img/zomato-logo.webp" alt="Order on Zomato" className="h-6 w-auto object-contain" />
+                    <img src="/img/zomato-logo.avif" alt="Order on Zomato" className="h-6 w-auto object-contain" />
                   </a>
                 </div>
               </div>
