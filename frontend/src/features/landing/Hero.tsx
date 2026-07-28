@@ -104,27 +104,42 @@ export default function Hero() {
               </Button>
             </div>
 
-            <div ref={statsRef} className="grid grid-cols-3 gap-6 mt-16 pt-8 border-t border-coffee-200">
-              <div>
-                <div className="flex items-center gap-2 text-coffee-900 font-semibold text-lg mb-1">
-                  <Clock className="w-5 h-5 text-coffee-600" />
-                  <span>15 min</span>
+            <div ref={statsRef} className="mt-16 pt-8 border-t border-coffee-200">
+              <div className="grid grid-cols-3 gap-6 mb-10">
+                <div>
+                  <div className="flex items-center gap-2 text-coffee-900 font-semibold text-lg mb-1">
+                    <Clock className="w-5 h-5 text-coffee-600" />
+                    <span>15 min</span>
+                  </div>
+                  <div className="text-sm text-coffee-700">Avg Delivery</div>
                 </div>
-                <div className="text-sm text-coffee-700">Avg Delivery</div>
+                <div>
+                  <div className="flex items-center gap-2 text-coffee-900 font-semibold text-lg mb-1">
+                    <Leaf className="w-5 h-5 text-coffee-600" />
+                    <span>100%</span>
+                  </div>
+                  <div className="text-sm text-coffee-700">Organic Beans</div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 text-coffee-900 font-semibold text-lg mb-1">
+                    <Star className="w-5 h-5 fill-coffee-600 text-coffee-600" />
+                    <span>4.9</span>
+                  </div>
+                  <div className="text-sm text-coffee-700">Rating</div>
+                </div>
               </div>
-              <div>
-                <div className="flex items-center gap-2 text-coffee-900 font-semibold text-lg mb-1">
-                  <Leaf className="w-5 h-5 text-coffee-600" />
-                  <span>100%</span>
+
+              {/* Delivery Partners */}
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-semibold text-coffee-500 uppercase tracking-widest">Order Delivery From</p>
+                <div className="flex items-center gap-6">
+                  <a href="#" target="_blank" rel="noreferrer" className="block hover:scale-110 transition-transform bg-white rounded-xl shadow-sm border border-coffee-100 p-2 hover:shadow-md">
+                    <img src="/images/swiggy-logo.svg" alt="Order on Swiggy" className="h-6 w-auto object-contain" />
+                  </a>
+                  <a href="#" target="_blank" rel="noreferrer" className="block hover:scale-110 transition-transform bg-white rounded-xl shadow-sm border border-coffee-100 p-2 hover:shadow-md">
+                    <img src="/images/zomato-logo.svg" alt="Order on Zomato" className="h-6 w-auto object-contain" />
+                  </a>
                 </div>
-                <div className="text-sm text-coffee-700">Organic Beans</div>
-              </div>
-              <div>
-                <div className="flex items-center gap-2 text-coffee-900 font-semibold text-lg mb-1">
-                  <Star className="w-5 h-5 fill-coffee-600 text-coffee-600" />
-                  <span>4.9</span>
-                </div>
-                <div className="text-sm text-coffee-700">Rating</div>
               </div>
             </div>
           </div>
