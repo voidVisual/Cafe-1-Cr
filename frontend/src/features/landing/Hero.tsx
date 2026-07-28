@@ -134,10 +134,10 @@ export default function Hero() {
                 <p className="text-xs font-semibold text-coffee-500 uppercase tracking-widest">Order Delivery From</p>
                 <div className="flex items-center gap-6">
                   <a href="#" target="_blank" rel="noreferrer" className="block hover:scale-110 transition-transform bg-white rounded-xl shadow-sm border border-coffee-100 p-2 hover:shadow-md">
-                    <img src="/images/swiggy-logo.svg" alt="Order on Swiggy" className="h-6 w-auto object-contain" />
+                    <img src="/img/swiggy-logo.webp" alt="Order on Swiggy" className="h-6 w-auto object-contain" />
                   </a>
                   <a href="#" target="_blank" rel="noreferrer" className="block hover:scale-110 transition-transform bg-white rounded-xl shadow-sm border border-coffee-100 p-2 hover:shadow-md">
-                    <img src="/images/zomato-logo.svg" alt="Order on Zomato" className="h-6 w-auto object-contain" />
+                    <img src="/img/zomato-logo.webp" alt="Order on Zomato" className="h-6 w-auto object-contain" />
                   </a>
                 </div>
               </div>
