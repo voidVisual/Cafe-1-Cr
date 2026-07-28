@@ -23,6 +23,12 @@ export default function CheckoutPage() {
       setError('Please provide both your name and table number.');
       return;
     }
+
+    const tNum = parseInt(tableNumber, 10);
+    if (isNaN(tNum) || tNum < 1 || tNum > 15) {
+      setError('Table number must be between 1 and 15.');
+      return;
+    }
     
     setError('');
     setIsOrdering(true);
@@ -68,8 +74,8 @@ export default function CheckoutPage() {
       setOrderDisplayId(orderData.order_display_id || orderData.db_order_id || '');
       setOrderComplete(true);
       clearCart();
-    } catch (err) {
-      setError('Something went wrong processing your order. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong processing your order. Please try again.');
     } finally {
       setIsOrdering(false);
     }
@@ -210,6 +216,7 @@ export default function CheckoutPage() {
                     className="w-full rounded-lg border-coffee-200 shadow-sm focus:border-coffee-500 focus:ring-coffee-500 sm:text-sm p-2.5 border"
                     placeholder="E.g. 4"
                     min="1"
+                    max="15"
                   />
                 </div>
               </div>

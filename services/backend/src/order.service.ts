@@ -1,6 +1,6 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
@@ -61,6 +61,24 @@ export class OrderService {
   }
 
   async placeOrder(orderDto: any) {
+    if (orderDto.table_number) {
+      const tableNum = Number(orderDto.table_number);
+      if (isNaN(tableNum) || tableNum < 1 || tableNum > 15) {
+        throw new BadRequestException('Table number must be between 1 and 15.');
+      }
+      
+      const activeOrder = await this.orderRepository.findOne({
+        where: {
+          table_number: tableNum,
+          status: Not(In(['Completed', 'Declined', 'Cancelled']))
+        }
+      });
+      
+      if (activeOrder) {
+        throw new BadRequestException(`Table ${tableNum} is currently occupied.`);
+      }
+    }
+
     // Compute total from items as a safety fallback (handles NaN / missing total)
     const computedTotal = (orderDto.items || []).reduce(
       (sum: number, item: any) => sum + (Number(item.price) || 0) * (Number(item.qty) || 1),
