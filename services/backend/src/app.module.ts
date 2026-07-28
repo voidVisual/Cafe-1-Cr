@@ -8,7 +8,6 @@ import { OrderItem } from './order-item.entity';
 import { MenuItem } from './menu-item.entity';
 import { MenuController } from './menu.controller';
 import { MenuService } from './menu.service';
-import { OrdersGateway } from './orders.gateway';
 
 @Module({
   imports: [
@@ -26,6 +25,6 @@ import { OrdersGateway } from './orders.gateway';
     OrderModule,
   ],
   controllers: [AppController, MenuController],
-  providers: [AppService, MenuService, OrdersGateway],
+  providers: [AppService, MenuService],
 })
 export class AppModule {}
