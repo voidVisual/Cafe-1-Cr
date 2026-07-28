@@ -683,9 +683,12 @@ export class MenuService implements OnModuleInit {
       });
       await this.menuRepository.save(entities);
     } else {
-      // Sync sort_order for existing items just in case
+      // Sync sort_order and category for existing items just in case
       for (const item of menu_data) {
-        await this.menuRepository.update({ name: item.name }, { sort_order: item.id });
+        await this.menuRepository.update(
+          { name: item.name },
+          { sort_order: item.id, category: item.category }
+        );
       }
     }
   }
