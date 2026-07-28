@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { MenuItem, MenuItemDocument } from './menu-item.schema';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { MenuItem } from './menu-item.entity';
 
 const menu_data = [
   {
@@ -669,20 +669,26 @@ const menu_data = [
 @Injectable()
 export class MenuService implements OnModuleInit {
   constructor(
-    @InjectModel(MenuItem.name) private menuModel: Model<MenuItemDocument>,
+    @InjectRepository(MenuItem)
+    private menuRepository: Repository<MenuItem>,
   ) {}
 
   async onModuleInit() {
-    const count = await this.menuModel.countDocuments();
+    const count = await this.menuRepository.count();
     if (count === 0) {
-      await this.menuModel.insertMany(menu_data);
+      const entities = menu_data.map(data => {
+        // Exclude the integer id from MongoDB seed data, let Postgres generate a UUID
+        const { id, ...rest } = data;
+        return this.menuRepository.create(rest);
+      });
+      await this.menuRepository.save(entities);
     }
   }
 
   async getMenu() {
-    const items = await this.menuModel.find().exec();
+    const items = await this.menuRepository.find();
     return items.map(item => ({
-      id: item._id.toString(),
+      id: item.id,
       name: item.name,
       sub: item.sub,
       category: item.category,
@@ -698,16 +704,17 @@ export class MenuService implements OnModuleInit {
   }
 
   async createMenu(data: any) {
-    const newItem = new this.menuModel(data);
-    return await newItem.save();
+    const newItem = this.menuRepository.create(data);
+    return await this.menuRepository.save(newItem);
   }
 
   async updateMenu(id: string, data: any) {
-    return await this.menuModel.findByIdAndUpdate(id, data, { new: true }).exec();
+    await this.menuRepository.update(id, data);
+    return await this.menuRepository.findOne({ where: { id } });
   }
 
   async deleteMenu(id: string) {
-    await this.menuModel.findByIdAndDelete(id).exec();
+    await this.menuRepository.delete(id);
     return { success: true };
   }
 }

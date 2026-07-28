@@ -5,6 +5,10 @@ import { AppService } from './app.service';
 import { OrderModule } from './order.module';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
+import { MenuItem } from './menu-item.entity';
+import { MenuController } from './menu.controller';
+import { MenuService } from './menu.service';
+import { OrdersGateway } from './orders.gateway';
 
 @Module({
   imports: [
@@ -15,12 +19,13 @@ import { OrderItem } from './order-item.entity';
       username: process.env.DB_USER || 'cafe_user',
       password: process.env.DB_PASSWORD || 'cafe_password',
       database: process.env.DB_NAME || 'cafe_db',
-      entities: [Order, OrderItem],
+      entities: [Order, OrderItem, MenuItem],
       synchronize: true, // For development sync
     }),
+    TypeOrmModule.forFeature([MenuItem]),
     OrderModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, MenuController],
+  providers: [AppService, MenuService, OrdersGateway],
 })
 export class AppModule {}

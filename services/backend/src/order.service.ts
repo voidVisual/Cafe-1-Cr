@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
+import { OrdersGateway } from './orders.gateway';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class OrderService {
   constructor(
     @InjectRepository(Order)
     private orderRepository: Repository<Order>,
+    private ordersGateway: OrdersGateway,
   ) {}
 
   normalizePhone(phone: string): string {
@@ -38,20 +40,16 @@ export class OrderService {
     order.status = 'PAID';
     await this.orderRepository.save(order);
 
-    fetch('http://localhost:3002/api/internal/webhook/orders/created', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: order.id,
-        order_display_id: order.order_display_id,
-        status: order.status,
-        total_amount: order.total_amount,
-        items: order.items,
-        customer_phone: order.customer_phone,
-        customer_name: order.customer_name,
-        table_number: order.table_number,
-      })
-    }).catch(err => console.error('Failed to notify admin-gateway:', err));
+    this.ordersGateway.broadcastOrderCreated({
+      id: order.id,
+      order_display_id: order.order_display_id,
+      status: order.status,
+      total_amount: order.total_amount,
+      items: order.items,
+      customer_phone: order.customer_phone,
+      customer_name: order.customer_name,
+      table_number: order.table_number,
+    });
 
     return {
       success: true,
@@ -189,18 +187,13 @@ export class OrderService {
       if (prepTimeMinutes) order.prep_time_minutes = prepTimeMinutes;
     }
     await this.orderRepository.save(order);
-    // Webhook so admin-gateway is notified
-    fetch('http://localhost:3002/api/internal/webhook/orders/status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        order_id: order.id,
-        order_display_id: order.order_display_id,
-        status: order.status,
-        timestamp: new Date().toISOString(),
-        updated_by: 'admin',
-      })
-    }).catch(err => console.error('Failed to notify admin-gateway:', err));
+    this.ordersGateway.broadcastOrderStatus({
+      order_id: order.id,
+      order_display_id: order.order_display_id,
+      status: order.status,
+      timestamp: new Date().toISOString(),
+      updated_by: 'admin',
+    });
     return { success: true, status: order.status };
   }
 }
