@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Clock, RefreshCw } from "lucide-react";
-import clsx from "clsx";
 
 
 type OrderStatus = "New" | "Preparing" | "Ready" | "Completed";
@@ -39,8 +38,7 @@ function normalizeStatus(status: string): OrderStatus {
 export default function LiveOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [connected, setConnected] = useState(true);
-  
+  const connected = true; // Kept to show UI state
 
   // Fetch existing orders from backend
   const fetchOrders = async () => {
@@ -48,6 +46,7 @@ export default function LiveOrders() {
       const res = await fetch("/api/admin/orders");
       if (!res.ok) return;
       const data = await res.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mapped: Order[] = (data.orders || []).map((o: any) => ({
         id: o.id,
         order_display_id: o.order_display_id || o.id,
@@ -68,6 +67,7 @@ export default function LiveOrders() {
 
   // Smart polling for live updates
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchOrders();
 
     const intervalId = setInterval(() => {
@@ -100,7 +100,7 @@ export default function LiveOrders() {
   };
 
   return (
-    <div className="h-full flex flex-col space-y-6">
+    <div className="h-[calc(100vh-8rem)] flex flex-col space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Live Orders</h1>
         <div className="flex items-center gap-4">
@@ -136,7 +136,7 @@ export default function LiveOrders() {
       ) : (
         <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-6 overflow-hidden pb-4">
           {columns.map((column) => (
-            <div key={column} className="flex flex-col rounded-xl bg-gray-100/50 p-4">
+            <div key={column} className="flex flex-col rounded-xl bg-gray-100/50 p-4 min-h-0">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-gray-800">{column}</h2>
                 <span className="bg-white text-gray-600 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">

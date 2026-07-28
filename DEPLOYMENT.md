@@ -13,14 +13,11 @@ Internet (Port 80/443)
 (static)       │
                ├── /api/menu     → admin-gateway   :3002
                ├── /api/admin    → admin-gateway   :3002
-               ├── /api/analytics→ analytics       :3004
-               ├── /api/kitchen  → kitchen-display :3003
                └── Socket.IO     → admin-gateway   :3002
 
 Frontend /api/* → order-service :3001
                 → admin-gateway :3002
 
-[Kafka :9092] ← Event bus connecting all services
 [Postgres :5432] ← Orders, Payments
 [MongoDB :27017] ← Menu Items
 ```
@@ -88,12 +85,11 @@ Fill in:
 ## Step 5: Start Infrastructure (Docker)
 
 ```bash
-# Start Postgres, MongoDB, Kafka
+# Start Postgres, MongoDB
 docker compose -f docker-compose.prod.yml up -d
 
-# Wait ~30 seconds for Kafka to initialize, then verify:
+# Verify:
 docker ps
-docker logs cafe_kafka_init
 ```
 
 ---
@@ -109,47 +105,25 @@ cd /root/Cafe-1-Cr/services/order-service
 npm install
 npm run build
 DATABASE_URL="postgresql://cafe_user:YOUR_PASSWORD@localhost:5432/cafe_db" \
-KAFKA_BROKER="localhost:9092" \
 pm2 start dist/main.js --name order-service
+
 
 # ── Admin Gateway ──────────────────────────────────────────────────
 cd /root/Cafe-1-Cr/services/admin-gateway
 npm install
 npm run build
 MONGODB_URI="mongodb://localhost:27017/cafe_db" \
-KAFKA_BROKER="localhost:9092" \
 ORDER_SERVICE_HOST="localhost" \
-KITCHEN_SERVICE_HOST="localhost" \
 pm2 start dist/main.js --name admin-gateway
-
-# ── Kitchen Display ────────────────────────────────────────────────
-cd /root/Cafe-1-Cr/services/kitchen-display
-npm install
-npm run build
-DATABASE_URL="postgresql://cafe_user:YOUR_PASSWORD@localhost:5432/cafe_db" \
-KAFKA_BROKER="localhost:9092" \
-pm2 start dist/main.js --name kitchen-display
-
-# ── Analytics ──────────────────────────────────────────────────────
-cd /root/Cafe-1-Cr/services/analytics
-npm install
-npm run build
-DATABASE_URL="postgresql://cafe_user:YOUR_PASSWORD@localhost:5432/cafe_db" \
-KAFKA_BROKER="localhost:9092" \
-pm2 start dist/main.js --name analytics
 
 # ── Admin Dashboard (Next.js) ──────────────────────────────────────
 cd /root/Cafe-1-Cr/apps/admin-dashboard
 npm install
 ADMIN_GATEWAY_URL="http://localhost:3002" \
 ORDER_SERVICE_URL="http://localhost:3001" \
-KITCHEN_SERVICE_URL="http://localhost:3003" \
-ANALYTICS_URL="http://localhost:3004" \
 npm run build
 ADMIN_GATEWAY_URL="http://localhost:3002" \
 ORDER_SERVICE_URL="http://localhost:3001" \
-KITCHEN_SERVICE_URL="http://localhost:3003" \
-ANALYTICS_URL="http://localhost:3004" \
 pm2 start npm --name admin-dashboard -- start
 
 # ── Frontend (Build static files) ─────────────────────────────────
@@ -279,8 +253,5 @@ cp -r dist /var/www/cafe/frontend
 | Admin Dashboard (Next.js) | 3000 | Admin UI |
 | Order Service (NestJS) | 3001 | Orders, payments |
 | Admin Gateway (NestJS) | 3002 | Menu CRUD, orders proxy, Socket.IO |
-| Kitchen Display (NestJS) | 3003 | Kitchen order status |
-| Analytics (NestJS) | 3004 | Revenue analytics |
 | PostgreSQL | 5432 | Orders DB (internal only) |
 | MongoDB | 27017 | Menu DB (internal only) |
-| Kafka | 9092 | Event broker (restrict access) |

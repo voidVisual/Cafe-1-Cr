@@ -39,13 +39,22 @@ export class AppService {
         // Use a deterministic numeric id from item_id string, avoid random fallback
         const numericId = parseInt(item.item_id) || 
           item.name.split('').reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
-        await this.dimItemRepo.save({
-          item_id: numericId,
-          name: item.name,
-          category: item.category || 'Uncategorized',
-        }).catch(() => {
-          // ignore duplicate key violations
-        });
+        const qty = parseInt(item.qty) || 1;
+
+        let existingItem = await this.dimItemRepo.findOneBy({ item_id: numericId });
+        if (existingItem) {
+          existingItem.sales_count = (existingItem.sales_count || 0) + qty;
+          await this.dimItemRepo.save(existingItem);
+        } else {
+          await this.dimItemRepo.save({
+            item_id: numericId,
+            name: item.name,
+            category: item.category || 'Uncategorized',
+            sales_count: qty,
+          }).catch(() => {
+            // ignore duplicate key violations
+          });
+        }
       }
     }
     
@@ -94,14 +103,12 @@ export class AppService {
     });
 
     // 3. Top Items
-    // Since fact_order_items isn't fully linked in the warehouse, 
-    // we use dim_item occurrences to approximate top items recently ordered
+    // Read from the newly aggregated sales_count column
     const topItemsResult = await this.dimItemRepo
       .createQueryBuilder('item')
       .select('item.name', 'name')
-      .addSelect('COUNT(item.item_id)', 'sales')
-      .groupBy('item.name')
-      .orderBy('sales', 'DESC')
+      .addSelect('item.sales_count', 'sales')
+      .orderBy('item.sales_count', 'DESC')
       .limit(5)
       .getRawMany();
 

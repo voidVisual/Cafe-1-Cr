@@ -1,21 +1,20 @@
-import { Controller, Get, Put, Param, Body } from '@nestjs/common';
-import { EventPattern, Payload } from '@nestjs/microservices';
+import { Controller, Get, Put, Post, Param, Body } from '@nestjs/common';
 import { OrdersGateway } from './orders.gateway';
 
 @Controller()
 export class OrdersController {
   constructor(private readonly ordersGateway: OrdersGateway) {}
 
-  // ── Kafka event handlers ────────────────────────────────────────────────
-  @EventPattern('orders.created')
-  handleOrderCreated(@Payload() message: any) {
-    console.log('Admin Gateway received orders.created:', message.id);
+  // ── Webhooks from Order Service ─────────────────────────────────────────
+  @Post('api/internal/webhook/orders/created')
+  handleOrderCreated(@Body() message: any) {
+    console.log('Admin Gateway received orders.created webhook:', message.id);
     this.ordersGateway.broadcastOrderCreated(message);
   }
 
-  @EventPattern('orders.status')
-  handleOrderStatus(@Payload() message: any) {
-    console.log('Admin Gateway received orders.status:', message.order_id);
+  @Post('api/internal/webhook/orders/status')
+  handleOrderStatus(@Body() message: any) {
+    console.log('Admin Gateway received orders.status webhook:', message.order_id);
     this.ordersGateway.broadcastOrderStatus(message);
   }
 
@@ -49,7 +48,7 @@ export class OrdersController {
   async updateOrderStatus(@Param('id') id: string, @Body() body: any) {
     try {
       const res = await fetch(
-        `http://${process.env.KITCHEN_SERVICE_HOST || 'localhost'}:${process.env.KITCHEN_SERVICE_PORT || 3003}/api/kitchen/orders/${id}/status`,
+        `http://${process.env.ORDER_SERVICE_HOST || 'localhost'}:${process.env.ORDER_SERVICE_PORT || 3001}/api/admin/orders/${id}/status`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

@@ -10,4 +10,7 @@ export class DimItem {
 
   @Column({ nullable: true })
   category: string;
+
+  @Column({ type: 'int', default: 0 })
+  sales_count: number;
 }
