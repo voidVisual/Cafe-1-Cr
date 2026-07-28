@@ -4,20 +4,23 @@ import { useCartStore } from '@/store/cartStore';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
-const categories = ['All', 'Cappuccino', 'Latte', 'Macchiato', 'Cold Coffee', 'Fries', 'Pizza', 'Sandwich', 'Burger', 'Snacks & Pasta'];
+const categories = ['All', 'Cold Coffee', 'Hot Coffee', 'Ice Tea', 'Shakes', 'Fries', 'Pasta', 'Maggie', 'Sandwich', 'Pizza', 'Burger', 'Snacks', 'Desserts'];
 
 // Display labels for the category buttons (matches what the backend seeds)
 const categoryLabels: Record<string, string> = {
   'All': 'All',
-  'Cappuccino': 'Cappuccino',
-  'Latte': 'Latte',
-  'Macchiato': 'Macchiato',
   'Cold Coffee': 'Cold Coffee',
+  'Hot Coffee': 'Hot Coffee',
+  'Ice Tea': 'Ice Tea',
+  'Shakes': 'Shakes',
   'Fries': 'Fries',
-  'Pizza': 'Pizza',
+  'Pasta': 'Pasta',
+  'Maggie': 'Maggie',
   'Sandwich': 'Sandwich',
+  'Pizza': 'Pizza',
   'Burger': 'Burger',
-  'Snacks & Pasta': 'Snacks & Pasta',
+  'Snacks': 'Snacks',
+  'Desserts': 'Desserts',
 };
 
 export default function MenuPage() {

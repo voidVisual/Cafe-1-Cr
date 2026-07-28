@@ -71,7 +71,7 @@ const menu_data = [
     "rating": 4.5,
     "reviews": 300,
     "price": 20,
-    "category": "Hot Coffee & Tea",
+    "category": "Hot Coffee",
     "img": "/images/black_coffee_1783664339035.png"
   },
   {
@@ -81,7 +81,7 @@ const menu_data = [
     "rating": 4.7,
     "reviews": 450,
     "price": 30,
-    "category": "Hot Coffee & Tea",
+    "category": "Hot Coffee",
     "img": "/images/hot_coffee_1783664353907.png"
   },
   {
@@ -91,7 +91,7 @@ const menu_data = [
     "rating": 4.9,
     "reviews": 312,
     "price": 50,
-    "category": "Hot Coffee & Tea",
+    "category": "Hot Coffee",
     "img": "/images/caramel_macchiato.png"
   },
   {
@@ -101,7 +101,7 @@ const menu_data = [
     "rating": 4.6,
     "reviews": 88,
     "price": 60,
-    "category": "Hot Coffee & Tea",
+    "category": "Ice Tea",
     "img": "/images/iced_cold_brew.png"
   },
   {
@@ -111,7 +111,7 @@ const menu_data = [
     "rating": 4.8,
     "reviews": 105,
     "price": 60,
-    "category": "Hot Coffee & Tea",
+    "category": "Ice Tea",
     "img": "/images/chai_tea_latte.png"
   },
   {
@@ -171,7 +171,7 @@ const menu_data = [
     "rating": 4.6,
     "reviews": 130,
     "price": 70,
-    "category": "Fries & Cheese",
+    "category": "Fries",
     "img": "/images/avocado_toast.png"
   },
   {
@@ -181,7 +181,7 @@ const menu_data = [
     "rating": 4.7,
     "reviews": 145,
     "price": 90,
-    "category": "Fries & Cheese",
+    "category": "Fries",
     "img": "/images/almond_croissant.png"
   },
   {
@@ -191,7 +191,7 @@ const menu_data = [
     "rating": 4.5,
     "reviews": 95,
     "price": 80,
-    "category": "Fries & Cheese",
+    "category": "Fries",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -201,7 +201,7 @@ const menu_data = [
     "rating": 4.8,
     "reviews": 220,
     "price": 110,
-    "category": "Fries & Cheese",
+    "category": "Fries",
     "img": "/images/avocado_toast.png"
   },
   {
@@ -211,7 +211,7 @@ const menu_data = [
     "rating": 4.9,
     "reviews": 250,
     "price": 100,
-    "category": "Fries & Cheese",
+    "category": "Fries",
     "img": "/images/blueberry_muffin.png"
   },
   {
@@ -221,7 +221,7 @@ const menu_data = [
     "rating": 4.8,
     "reviews": 190,
     "price": 140,
-    "category": "Fries & Cheese",
+    "category": "Fries",
     "img": "/images/avocado_toast.png"
   },
   {
@@ -231,7 +231,7 @@ const menu_data = [
     "rating": 4.7,
     "reviews": 160,
     "price": 150,
-    "category": "Fries & Cheese",
+    "category": "Fries",
     "img": "/images/almond_croissant.png"
   },
   {
@@ -241,7 +241,7 @@ const menu_data = [
     "rating": 4.8,
     "reviews": 210,
     "price": 130,
-    "category": "Pasta & Noodles",
+    "category": "Pasta",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -251,7 +251,7 @@ const menu_data = [
     "rating": 4.6,
     "reviews": 180,
     "price": 140,
-    "category": "Pasta & Noodles",
+    "category": "Pasta",
     "img": "/images/avocado_toast.png"
   },
   {
@@ -261,7 +261,7 @@ const menu_data = [
     "rating": 4.7,
     "reviews": 195,
     "price": 150,
-    "category": "Pasta & Noodles",
+    "category": "Pasta",
     "img": "/images/almond_croissant.png"
   },
   {
@@ -271,7 +271,7 @@ const menu_data = [
     "rating": 4.5,
     "reviews": 300,
     "price": 50,
-    "category": "Pasta & Noodles",
+    "category": "Maggie",
     "img": "/images/blueberry_muffin.png"
   },
   {
@@ -281,7 +281,7 @@ const menu_data = [
     "rating": 4.6,
     "reviews": 250,
     "price": 60,
-    "category": "Pasta & Noodles",
+    "category": "Maggie",
     "img": "/images/avocado_toast.png"
   },
   {
@@ -291,7 +291,7 @@ const menu_data = [
     "rating": 4.8,
     "reviews": 320,
     "price": 60,
-    "category": "Pasta & Noodles",
+    "category": "Maggie",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -301,7 +301,7 @@ const menu_data = [
     "rating": 4.7,
     "reviews": 290,
     "price": 70,
-    "category": "Pasta & Noodles",
+    "category": "Maggie",
     "img": "/images/almond_croissant.png"
   },
   {
@@ -401,7 +401,7 @@ const menu_data = [
     "rating": 4.7,
     "reviews": 120,
     "price": 99,
-    "category": "Snacks",
+    "category": "Sandwich",
     "img": "/images/avocado_toast.png"
   },
   {
@@ -411,7 +411,7 @@ const menu_data = [
     "rating": 4.8,
     "reviews": 145,
     "price": 99,
-    "category": "Sandwiches",
+    "category": "Sandwich",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -421,7 +421,7 @@ const menu_data = [
     "rating": 4.4,
     "reviews": 200,
     "price": 50,
-    "category": "Sandwiches",
+    "category": "Sandwich",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -431,7 +431,7 @@ const menu_data = [
     "rating": 4.5,
     "reviews": 180,
     "price": 50,
-    "category": "Sandwiches",
+    "category": "Sandwich",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -441,7 +441,7 @@ const menu_data = [
     "rating": 4.8,
     "reviews": 310,
     "price": 70,
-    "category": "Snacks",
+    "category": "Sandwich",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -461,7 +461,7 @@ const menu_data = [
     "rating": 4.8,
     "reviews": 280,
     "price": 90,
-    "category": "Sandwiches",
+    "category": "Sandwich",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -471,7 +471,7 @@ const menu_data = [
     "rating": 4.9,
     "reviews": 350,
     "price": 99,
-    "category": "Sandwiches",
+    "category": "Sandwich",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -481,7 +481,7 @@ const menu_data = [
     "rating": 4.6,
     "reviews": 190,
     "price": 99,
-    "category": "Sandwiches",
+    "category": "Sandwich",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -491,7 +491,7 @@ const menu_data = [
     "rating": 4.8,
     "reviews": 220,
     "price": 149,
-    "category": "Sandwiches",
+    "category": "Sandwich",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -501,7 +501,7 @@ const menu_data = [
     "rating": 4.9,
     "reviews": 410,
     "price": 179,
-    "category": "Sandwiches",
+    "category": "Sandwich",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -611,7 +611,7 @@ const menu_data = [
     "rating": 4.6,
     "reviews": 240,
     "price": 70,
-    "category": "Burgers",
+    "category": "Burger",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -621,7 +621,7 @@ const menu_data = [
     "rating": 4.7,
     "reviews": 280,
     "price": 90,
-    "category": "Burgers",
+    "category": "Burger",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -631,7 +631,7 @@ const menu_data = [
     "rating": 4.8,
     "reviews": 310,
     "price": 99,
-    "category": "Burgers",
+    "category": "Burger",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -641,7 +641,7 @@ const menu_data = [
     "rating": 4.9,
     "reviews": 450,
     "price": 120,
-    "category": "Burgers",
+    "category": "Burger",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -651,7 +651,7 @@ const menu_data = [
     "rating": 4.8,
     "reviews": 420,
     "price": 130,
-    "category": "Burgers",
+    "category": "Burger",
     "img": "/images/hero_coffee.png"
   },
   {
@@ -661,7 +661,7 @@ const menu_data = [
     "rating": 4.9,
     "reviews": 510,
     "price": 140,
-    "category": "Burgers",
+    "category": "Burger",
     "img": "/images/hero_coffee.png"
   }
 ];
