@@ -679,14 +679,21 @@ export class MenuService implements OnModuleInit {
       const entities = menu_data.map(data => {
         // Exclude the integer id from MongoDB seed data, let Postgres generate a UUID
         const { id, ...rest } = data;
-        return this.menuRepository.create(rest);
+        return this.menuRepository.create({ ...rest, sort_order: id });
       });
       await this.menuRepository.save(entities);
+    } else {
+      // Sync sort_order for existing items just in case
+      for (const item of menu_data) {
+        await this.menuRepository.update({ name: item.name }, { sort_order: item.id });
+      }
     }
   }
 
   async getMenu() {
-    const items = await this.menuRepository.find();
+    const items = await this.menuRepository.find({
+      order: { sort_order: 'ASC' }
+    });
     return items.map(item => ({
       id: item.id,
       name: item.name,

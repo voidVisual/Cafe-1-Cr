@@ -41,6 +41,9 @@ export class MenuItem {
   @Column({ nullable: true })
   image_url: string;
 
+  @Column('int', { default: 0 })
+  sort_order: number;
+
   @CreateDateColumn()
   created_at: Date;
 
