@@ -196,4 +196,78 @@ export class OrderService {
     });
     return { success: true, status: order.status };
   }
+
+  async getAnalytics() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get today's orders
+    const todaysOrders = await this.orderRepository.find({
+      where: {
+        // Simple way to filter by today (assuming created_at is a Date column)
+        // Wait, TypeORM might need Between or raw SQL for dates.
+        // Let's just fetch all recent orders and filter in memory since it's a small app
+      },
+      relations: { items: true },
+      order: { created_at: 'DESC' },
+      take: 1000 // reasonable limit
+    });
+
+    let revenueToday = 0;
+    let ordersToday = 0;
+    const itemSales: Record<string, number> = {};
+
+    const last7DaysRevenue: Record<string, number> = {};
+    const last7DaysOrders: Record<string, number> = {};
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dayStr = d.toLocaleDateString('en-US', { weekday: 'short' });
+      last7DaysRevenue[dayStr] = 0;
+      last7DaysOrders[dayStr] = 0;
+    }
+
+    for (const order of todaysOrders) {
+      // Calculate today's stats
+      if (order.created_at >= today) {
+        ordersToday++;
+        revenueToday += order.total_amount;
+      }
+
+      // Calculate chart data (last 7 days)
+      const orderDate = new Date(order.created_at);
+      const dayStr = orderDate.toLocaleDateString('en-US', { weekday: 'short' });
+      if (last7DaysRevenue[dayStr] !== undefined) {
+        last7DaysRevenue[dayStr] += order.total_amount;
+        last7DaysOrders[dayStr]++;
+      }
+
+      // Calculate top items
+      for (const item of order.items) {
+        if (!itemSales[item.name]) {
+          itemSales[item.name] = 0;
+        }
+        itemSales[item.name] += item.qty;
+      }
+    }
+
+    const topItems = Object.entries(itemSales)
+      .map(([name, sales]) => ({ name, sales }))
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 5);
+
+    const chartData = Object.keys(last7DaysRevenue).map(day => ({
+      name: day,
+      revenue: last7DaysRevenue[day],
+      orders: last7DaysOrders[day]
+    }));
+
+    return {
+      revenueToday,
+      ordersToday,
+      topItems,
+      chartData
+    };
+  }
 }

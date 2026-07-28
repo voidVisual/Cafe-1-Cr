@@ -41,5 +41,11 @@ export class OrderController {
   updateOrderStatus(@Param('id') id: string, @Body() body: any) {
     return this.orderService.updateOrderStatus(id, body.status, body.prep_time_minutes);
   }
+
+  /** Admin: dashboard analytics */
+  @Get('analytics')
+  getAnalytics() {
+    return this.orderService.getAnalytics();
+  }
 }
 
