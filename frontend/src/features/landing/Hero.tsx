@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Star, Clock, Leaf } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,11 @@ export default function Hero() {
   const textRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
+  const [typedText, setTypedText] = useState('');
+  const fullText = "Art of Coffee";
 
   useEffect(() => {
+    // GSAP Animations
     const ctx = gsap.context(() => {
       const tl = gsap.timeline();
 
@@ -33,7 +36,29 @@ export default function Hero() {
       );
     }, heroRef);
 
-    return () => ctx.revert();
+    // Typing Animation
+    let currentText = '';
+    let i = 0;
+    
+    // Start typing after initial GSAP animation
+    const startDelay = setTimeout(() => {
+      const interval = setInterval(() => {
+        if (i < fullText.length) {
+          currentText += fullText.charAt(i);
+          setTypedText(currentText);
+          i++;
+        } else {
+          clearInterval(interval);
+        }
+      }, 120); // typing speed
+      
+      return () => clearInterval(interval);
+    }, 1200);
+
+    return () => {
+      ctx.revert();
+      clearTimeout(startDelay);
+    };
   }, []);
 
   return (
@@ -56,10 +81,14 @@ export default function Hero() {
             
             <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-coffee-900 mb-6">
               Experience the <br/>
-              <span className="italic text-coffee-600 font-light">Art of Coffee</span>
+              <span className="italic text-coffee-600 font-light">
+                {typedText}
+                <span className="animate-pulse opacity-70">|</span>
+              </span>
             </h1>
             
             <p className="text-lg md:text-xl text-coffee-800/80 mb-10 leading-relaxed max-w-lg">
+
               Freshly roasted beans, artisanal pastries, and a warm atmosphere. Order ahead or get it delivered to your door.
             </p>
             
