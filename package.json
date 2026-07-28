@@ -9,9 +9,9 @@
   ],
   "scripts": {
     "dev": "docker-compose up -d && npm run start:all",
-    "start": "npm run start:prod -w backend",
-    "start:all": "concurrently \"npm run dev -w frontend\" \"npm run dev -w admin-dashboard\" \"npm run start:dev -w backend\"",
-    "build": "npm run build -w backend && npm run build -w admin-dashboard && npm run build -w frontend"
+    "start": "npm run start:prod -w cafe-backend",
+    "start:all": "concurrently \"npm run dev -w frontend\" \"npm run dev -w admin-dashboard\" \"npm run start:dev -w cafe-backend\"",
+    "build": "npm run build -w cafe-backend && npm run build -w admin-dashboard && npm run build -w frontend"
   },
   "dependencies": {
     "caniuse-lite": "^1.0.30001805"
