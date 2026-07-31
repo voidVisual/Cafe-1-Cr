@@ -5,10 +5,6 @@ import { OrderService } from './order.service';
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
-  @Post('payment/create')
-  createPayment(@Body() orderDto: any) {
-    return this.orderService.createPayment(orderDto);
-  }
 
   @Post('payment/verify')
   verifyPayment(@Body() data: any) {
