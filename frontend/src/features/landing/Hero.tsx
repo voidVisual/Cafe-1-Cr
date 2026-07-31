@@ -132,9 +132,22 @@ export default function Hero() {
               {/* Delivery Partners */}
               <div className="flex flex-col gap-3 mt-6">
                 <p className="text-xs font-semibold text-coffee-500 uppercase tracking-widest">Home delivery available at</p>
-                <div className="flex items-center gap-6">
-                  <a href="https://www.swiggy.com/city/pune/cafe-1-cr-kothrud-rest1386519" target="_blank" rel="noreferrer" className="block hover:scale-110 transition-transform bg-[#FC8019] rounded-xl shadow-sm border border-coffee-100 p-2 hover:shadow-md">
-                    <img src="/img/swiggy-logo-hd.png" alt="Order on Swiggy" className="h-6 w-auto object-contain" />
+                <div className="flex items-center gap-4">
+                  <a
+                    href="https://www.swiggy.com/city/pune/cafe-1-cr-kothrud-rest1386519"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl hover:scale-105 transition-all duration-200 hover:shadow-lg"
+                    style={{ background: 'linear-gradient(135deg, #FF6B35 0%, #FC8019 100%)' }}
+                  >
+                    {/* Swiggy flame icon */}
+                    <svg width="20" height="22" viewBox="0 0 40 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M20 0C20 0 32 10 32 22C32 28.627 26.627 34 20 34C13.373 34 8 28.627 8 22C8 16 12 10 12 10C12 10 12 16 16 18C16 12 20 0 20 0Z" fill="white"/>
+                      <path d="M20 20C20 20 25 24 25 28C25 30.761 22.761 33 20 33C17.239 33 15 30.761 15 28C15 24 20 20 20 20Z" fill="rgba(255,255,255,0.6)"/>
+                    </svg>
+                    <span className="font-bold text-white text-sm tracking-wide" style={{ fontFamily: 'Arial, sans-serif', letterSpacing: '0.5px' }}>
+                      swiggy
+                    </span>
                   </a>
                 </div>
               </div>
