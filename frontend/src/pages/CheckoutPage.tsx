@@ -205,25 +205,19 @@ export default function CheckoutPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-coffee-700 mb-3">
-                    Select Table Number
+                  <label htmlFor="tableNumber" className="block text-sm font-medium text-coffee-700 mb-1">
+                    Table Number
                   </label>
-                  <div className="grid grid-cols-5 gap-2 sm:gap-3">
-                    {Array.from({ length: 15 }, (_, i) => i + 1).map((num) => (
-                      <button
-                        key={num}
-                        type="button"
-                        onClick={() => setTableNumber(num.toString())}
-                        className={`aspect-square rounded-xl border flex items-center justify-center font-semibold text-lg transition-all duration-200 ${
-                          tableNumber === num.toString()
-                            ? 'border-coffee-900 bg-coffee-900 text-white shadow-md scale-105'
-                            : 'border-coffee-200 bg-white text-coffee-600 hover:border-coffee-400 hover:bg-coffee-50 hover:shadow-sm'
-                        }`}
-                      >
-                        {num}
-                      </button>
-                    ))}
-                  </div>
+                  <input
+                    type="number"
+                    id="tableNumber"
+                    min="1"
+                    max="15"
+                    value={tableNumber}
+                    onChange={(e) => setTableNumber(e.target.value)}
+                    className="w-full rounded-lg border-coffee-200 shadow-sm focus:border-coffee-500 focus:ring-coffee-500 sm:text-sm p-2.5 border"
+                    placeholder="Enter table number (1-15)"
+                  />
                 </div>
               </div>
 
