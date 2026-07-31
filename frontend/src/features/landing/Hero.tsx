@@ -138,7 +138,7 @@ export default function Hero() {
                   rel="noreferrer"
                   className="hover:scale-105 transition-all duration-200 hover:opacity-80 flex-shrink-0"
                 >
-                  <img src="/img/swiggy-logo-transparent.png" alt="Order on Swiggy" className="h-14 w-auto object-contain" />
+                  <img src="/img/swiggy-logo-transparent.png" alt="Order on Swiggy" className="h-24 w-auto object-contain" />
                 </a>
               </div>
             </div>
