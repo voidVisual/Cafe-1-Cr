@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
@@ -18,6 +18,15 @@ export default function CheckoutPage() {
   
   const navigate = useNavigate();
 
+  // Load Cashfree JS SDK once
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => { if (document.body.contains(script)) document.body.removeChild(script); };
+  }, []);
+
   const handleCheckout = async () => {
     if (!customerName.trim() || !tableNumber.trim()) {
       setError('Please provide both your name and table number.');
@@ -29,53 +38,66 @@ export default function CheckoutPage() {
       setError('Table number must be between 1 and 15.');
       return;
     }
-    
+
     setError('');
     setIsOrdering(true);
 
     try {
-      // 1. Create the order (PENDING_PAYMENT) — payload matches NestJS OrderService.placeOrder()
+      // Step 1: Create order on backend → gets payment_session_id from Cashfree
       const orderPayload = {
         customer_name: customerName,
         table_number: parseInt(tableNumber, 10),
-        payment_method: 'CASH',
-        total: totalPrice * 1.05,
+        payment_method: 'CASHFREE',
+        total: parseFloat((totalPrice * 1.05).toFixed(2)),
         items: items.map(item => ({
-          id: item.id,           // ← matches order.service.ts: item.id
-          name: item.name,       // ← required by backend
-          qty: item.qty,         // ← matches backend field name
-          price: item.price,     // ← matches backend field name
+          id: item.id,
+          name: item.name,
+          qty: item.qty,
+          price: item.price,
         })),
       };
 
       const orderRes = await fetch((import.meta.env.VITE_API_URL || '') + '/api/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload)
+        body: JSON.stringify(orderPayload),
       });
       const orderData = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderData.message || 'Failed to initiate order');
 
-      if (!orderRes.ok) throw new Error(orderData.message || 'Failed to place order');
+      const { payment_session_id, db_order_id, cf_order_id, order_display_id } = orderData;
 
-      // 2. Verify / confirm payment — send db_order_id (the UUID), not the undefined .id
-      const paymentRes = await fetch((import.meta.env.VITE_API_URL || '') + '/api/payment/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          db_order_id: orderData.db_order_id,  // ← correct field from placeOrder response
-          order_id: orderData.order_id,
-          status: 'SUCCESS'
-        })
+      if (!payment_session_id) {
+        throw new Error('Payment session could not be created. Please try again.');
+      }
+
+      // Step 2: Open Cashfree checkout modal
+      const cashfreeMode = (import.meta.env.VITE_CASHFREE_ENV || 'sandbox');
+      const cashfree = (window as any).Cashfree({ mode: cashfreeMode });
+      const result = await cashfree.checkout({
+        paymentSessionId: payment_session_id,
+        redirectTarget: '_modal',
       });
 
-      if (!paymentRes.ok) throw new Error('Payment failed');
+      if (result.error) {
+        throw new Error(result.error.message || 'Payment failed. Please try again.');
+      }
 
-      // 3. Success
-      setOrderDisplayId(orderData.order_display_id || orderData.db_order_id || '');
+      // Step 3: Verify payment with backend
+      const verifyRes = await fetch((import.meta.env.VITE_API_URL || '') + '/api/payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ db_order_id, cf_order_id }),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) throw new Error(verifyData.message || 'Payment verification failed');
+
+      // Step 4: Success!
+      setOrderDisplayId(order_display_id || db_order_id);
       setOrderComplete(true);
       clearCart();
     } catch (err: any) {
-      setError(err.message || 'Something went wrong processing your order. Please try again.');
+      setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setIsOrdering(false);
     }
@@ -254,12 +276,12 @@ export default function CheckoutPage() {
                     Processing...
                   </span>
                 ) : (
-                  <span>Place Order</span>
+                  <span>Pay &#8377;{(totalPrice * 1.05).toFixed(2)}</span>
                 )}
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
               </Button>
               <p className="text-center text-xs text-coffee-500 mt-4">
-                Payments are securely processed. We don't store your credit card information.
+                Payments secured by <span className="font-semibold">Cashfree</span> &middot; UPI &middot; Cards &middot; Wallets
               </p>
             </div>
           </div>
