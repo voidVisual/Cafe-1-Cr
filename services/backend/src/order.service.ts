@@ -2,18 +2,14 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import * as crypto from 'crypto';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { OrdersGateway } from './orders.gateway';
 import { v4 as uuidv4 } from 'uuid';
 
-const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || '';
-const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY || '';
-const CASHFREE_ENV = (process.env.CASHFREE_ENV || 'TEST').toUpperCase();
-const CASHFREE_BASE_URL = CASHFREE_ENV === 'PROD'
-  ? 'https://api.cashfree.com/pg'
-  : 'https://sandbox.cashfree.com/pg';
 const CASHFREE_API_VERSION = '2023-08-01';
 
 @Injectable()
@@ -29,6 +25,11 @@ export class OrderService {
   }
 
   async createCashfreeOrder(amount: number, cfOrderId: string, customerName: string) {
+    const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || '';
+    const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY || '';
+    const CASHFREE_ENV = (process.env.CASHFREE_ENV || 'TEST').toUpperCase();
+    const CASHFREE_BASE_URL = CASHFREE_ENV === 'PROD' ? 'https://api.cashfree.com/pg' : 'https://sandbox.cashfree.com/pg';
+
     const body = JSON.stringify({
       order_id: cfOrderId,
       order_amount: parseFloat(amount.toFixed(2)),
@@ -64,6 +65,11 @@ export class OrderService {
   }
 
   async verifyCashfreePayment(cfOrderId: string) {
+    const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || '';
+    const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY || '';
+    const CASHFREE_ENV = (process.env.CASHFREE_ENV || 'TEST').toUpperCase();
+    const CASHFREE_BASE_URL = CASHFREE_ENV === 'PROD' ? 'https://api.cashfree.com/pg' : 'https://sandbox.cashfree.com/pg';
+
     const res = await fetch(`${CASHFREE_BASE_URL}/orders/${cfOrderId}`, {
       method: 'GET',
       headers: {
@@ -80,6 +86,7 @@ export class OrderService {
   async verifyPayment(data: any) {
     const dbOrderId = data.db_order_id;
     const cfOrderId = data.cf_order_id;
+    const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || '';
 
     if (!dbOrderId) throw new BadRequestException('Missing db_order_id');
 
@@ -172,6 +179,7 @@ export class OrderService {
     // Create Cashfree payment order
     const cfOrderId = 'CF-' + savedOrder.id.substring(0, 12);
     let paymentSessionId = null;
+    const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || '';
 
     if (CASHFREE_APP_ID) {
       try {
