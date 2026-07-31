@@ -39,7 +39,7 @@ export default function CheckoutPage() {
         customer_name: customerName,
         table_number: parseInt(tableNumber, 10),
         payment_method: 'CASH',
-        total: totalPrice * 1.05 + 40.00,
+        total: totalPrice * 1.05,
         items: items.map(item => ({
           id: item.id,           // ← matches order.service.ts: item.id
           name: item.name,       // ← required by backend
@@ -232,16 +232,12 @@ export default function CheckoutPage() {
                   <span>Taxes (5%)</span>
                   <span className="font-medium text-coffee-900">₹{(totalPrice * 0.05).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-coffee-600">
-                  <span>Delivery Fee</span>
-                  <span className="font-medium text-coffee-900">₹40.00</span>
-                </div>
               </div>
               
               <div className="border-t border-coffee-100 pt-4 mb-8">
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-lg text-coffee-900">Total</span>
-                  <span className="font-bold text-2xl text-coffee-900">₹{(totalPrice * 1.05 + 40.00).toFixed(2)}</span>
+                  <span className="font-bold text-2xl text-coffee-900">₹{(totalPrice * 1.05).toFixed(2)}</span>
                 </div>
               </div>
 

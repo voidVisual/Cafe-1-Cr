@@ -130,14 +130,11 @@ export default function Hero() {
               </div>
 
               {/* Delivery Partners */}
-              <div className="flex flex-col gap-3">
-                <p className="text-xs font-semibold text-coffee-500 uppercase tracking-widest">Order Delivery From</p>
+              <div className="flex flex-col gap-3 mt-6">
+                <p className="text-xs font-semibold text-coffee-500 uppercase tracking-widest">Home delivery available at</p>
                 <div className="flex items-center gap-6">
-                  <a href="#" target="_blank" rel="noreferrer" className="block hover:scale-110 transition-transform bg-white rounded-xl shadow-sm border border-coffee-100 p-2 hover:shadow-md">
-                    <img src="/img/swiggy_logo_white.avif" alt="Order on Swiggy" className="h-6 w-auto object-contain" />
-                  </a>
-                  <a href="#" target="_blank" rel="noreferrer" className="block hover:scale-110 transition-transform bg-white rounded-xl shadow-sm border border-coffee-100 p-2 hover:shadow-md">
-                    <img src="/img/zomato-logo.avif" alt="Order on Zomato" className="h-6 w-auto object-contain" />
+                  <a href="https://www.swiggy.com/city/pune/cafe-1-cr-kothrud-rest1386519" target="_blank" rel="noreferrer" className="block hover:scale-110 transition-transform bg-[#FC8019] rounded-xl shadow-sm border border-coffee-100 p-2 hover:shadow-md">
+                    <img src="/img/swiggy-logo-hd.png" alt="Order on Swiggy" className="h-6 w-auto object-contain" />
                   </a>
                 </div>
               </div>
