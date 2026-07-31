@@ -137,9 +137,9 @@ export default function Hero() {
                     href="https://www.swiggy.com/city/pune/cafe-1-cr-kothrud-rest1386519"
                     target="_blank"
                     rel="noreferrer"
-                    className="block hover:scale-105 transition-all duration-200 hover:shadow-md rounded-2xl overflow-hidden border border-coffee-100 shadow-sm"
+                    className="hover:scale-105 transition-all duration-200 hover:opacity-80"
                   >
-                    <img src="/img/swiggy-logo-hd.png" alt="Order on Swiggy" className="h-12 w-auto object-contain" />
+                    <img src="/img/swiggy-logo-transparent.png" alt="Order on Swiggy" className="h-10 w-auto object-contain" />
                   </a>
                 </div>
               </div>
