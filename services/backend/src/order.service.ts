@@ -41,9 +41,6 @@ export class OrderService {
         customer_email: 'guest@cafe1cr.in',
         customer_phone: '9999999999',
       },
-      order_meta: {
-        return_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/checkout?cf_order_id={order_id}`,
-      },
     });
 
     const res = await fetch(`${CASHFREE_BASE_URL}/orders`, {
