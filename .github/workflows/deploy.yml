@@ -1,3 +1,4 @@
+# Cafe-1-Cr Auto Deployment Workflow — v1.0
 name: Deploy to Droplet
 
 on:
