@@ -4,7 +4,7 @@ import { In, Not, Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env'), override: true });
 
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
