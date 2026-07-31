@@ -56,6 +56,7 @@ export class OrderService {
     });
 
     const data = await res.json();
+    console.log('[Cashfree] Status:', res.status, '| Response:', JSON.stringify(data));
     if (!res.ok) {
       throw new BadRequestException(data.message || 'Failed to create Cashfree order');
     }
