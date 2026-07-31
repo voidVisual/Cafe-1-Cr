@@ -130,18 +130,16 @@ export default function Hero() {
               </div>
 
               {/* Delivery Partners */}
-              <div className="flex flex-col gap-3 mt-6">
-                <p className="text-xs font-semibold text-coffee-500 uppercase tracking-widest">Home delivery available at</p>
-                <div className="flex items-center gap-4">
-                  <a
-                    href="https://www.swiggy.com/city/pune/cafe-1-cr-kothrud-rest1386519"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:scale-105 transition-all duration-200 hover:opacity-80"
-                  >
-                    <img src="/img/swiggy-logo-transparent.png" alt="Order on Swiggy" className="h-10 w-auto object-contain" />
-                  </a>
-                </div>
+              <div className="flex items-center gap-4 mt-8">
+                <div className="text-sm text-coffee-700 whitespace-nowrap">Home delivery available at</div>
+                <a
+                  href="https://www.swiggy.com/city/pune/cafe-1-cr-kothrud-rest1386519"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:scale-105 transition-all duration-200 hover:opacity-80 flex-shrink-0"
+                >
+                  <img src="/img/swiggy-logo-transparent.png" alt="Order on Swiggy" className="h-8 w-auto object-contain" />
+                </a>
               </div>
             </div>
           </div>
