@@ -19,17 +19,21 @@ export default function Footer() {
             <p className="text-coffee-200 text-sm leading-relaxed mb-6">
               Premium coffee and fresh, artisanal food delivered directly to you. Experience the modern cafe standard.
             </p>
-            <div className="flex gap-4">
+            <div className="flex gap-4 mb-4">
               <a href="#" className="w-10 h-10 rounded-full bg-gradient-to-br from-coffee-800 to-coffee-900 flex items-center justify-center hover:from-coffee-700 hover:to-coffee-800 transition-colors shadow-sm">
                 <Mail size={18} />
               </a>
               <a href="#" className="w-10 h-10 rounded-full bg-gradient-to-br from-coffee-800 to-coffee-900 flex items-center justify-center hover:from-coffee-700 hover:to-coffee-800 transition-colors shadow-sm">
                 <Phone size={18} />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-gradient-to-br from-coffee-800 to-coffee-900 flex items-center justify-center hover:from-coffee-700 hover:to-coffee-800 transition-colors shadow-sm">
+              <a href="https://maps.app.goo.gl/t6Ahjm6VaE1NoNXP9" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gradient-to-br from-coffee-800 to-coffee-900 flex items-center justify-center hover:from-coffee-700 hover:to-coffee-800 transition-colors shadow-sm" title="View on Google Maps">
                 <MapPin size={18} />
               </a>
             </div>
+            <a href="https://maps.app.goo.gl/t6Ahjm6VaE1NoNXP9" target="_blank" rel="noopener noreferrer" className="text-coffee-200 text-sm leading-relaxed hover:text-white transition-colors block">
+              Vishwashanti Marg, Rambaug Colony,<br />
+              Kothrud, Pune, Maharashtra 411038
+            </a>
           </div>
 
           <div>
