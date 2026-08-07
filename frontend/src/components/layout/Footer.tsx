@@ -30,10 +30,21 @@ export default function Footer() {
                 <MapPin size={18} />
               </a>
             </div>
-            <a href="https://maps.app.goo.gl/t6Ahjm6VaE1NoNXP9" target="_blank" rel="noopener noreferrer" className="text-coffee-200 text-sm leading-relaxed hover:text-white transition-colors block">
+            <a href="https://maps.app.goo.gl/t6Ahjm6VaE1NoNXP9" target="_blank" rel="noopener noreferrer" className="text-coffee-200 text-sm leading-relaxed hover:text-white transition-colors block mb-6">
               Vishwashanti Marg, Rambaug Colony,<br />
               Kothrud, Pune, Maharashtra 411038
             </a>
+            <div className="rounded-xl overflow-hidden h-32 border border-coffee-800 shadow-sm">
+              <iframe 
+                src="https://maps.google.com/maps?q=Vishwashanti%20Marg,%20Rambaug%20Colony,%20Kothrud,%20Pune,%20Maharashtra%20411038&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                width="100%" 
+                height="100%" 
+                style={{ border: 0 }} 
+                allowFullScreen 
+                loading="lazy" 
+                referrerPolicy="no-referrer-when-downgrade"
+              ></iframe>
+            </div>
           </div>
 
           <div>
